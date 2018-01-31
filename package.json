@@ -23,6 +23,7 @@
     "@opam/lambda-term": "^1.11.0",
     "@opam/yojson": "*",
     "@opam/cudf": "0.9",
+    "@opam/ocurl": "*",
     "@opam/mccs": "*",
     "lwt-node": "*",
     "@opam/opam-file-format": "*",

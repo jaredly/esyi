@@ -2,4 +2,4 @@
 
 (library
  ((name lib)
-  (libraries (lambda-term lwt str cudf mccs yojson opam-file-format))))
+  (libraries (lambda-term lwt str curl cudf mccs yojson opam-file-format))))

@@ -2,8 +2,10 @@ open Cudf;
 open Types;
 
 let getOpam = name => {
-  if (String.length(name) > 5 && String.sub(name, 0, 5) == "@opam") {
-    Some(String.sub(name, 5, String.length(name) - 5))
+  let ln = 6;
+  if (String.length(name) > ln && String.sub(name, 0, ln) == "@opam/") {
+    Some(name)
+    /* Some(String.sub(name, ln, String.length(name) - ln)) */
   } else {
     None
   }
@@ -56,12 +58,17 @@ let process = (parsed) => {
     | `Assoc(items) => items
     | _ => failwith("Unexpected value for dependencies")
     };
+    let buildDependencies = switch (List.assoc("buildDependencies", items)) {
+    | exception Not_found => []
+    | `Assoc(items) => items
+    | _ => failwith("Unexpected value for build deps")
+    };
     let devDependencies = switch (List.assoc("devDependencies", items)) {
     | exception Not_found => []
     | `Assoc(items) => items
     | _ => failwith("Unexpected value for dev deps")
     };
-    (dependencies |> List.map(toDep), devDependencies |> List.map(toDep))
+    (dependencies |> List.map(toDep), buildDependencies |> List.map(toDep), devDependencies |> List.map(toDep))
   }
   | _ => failwith("Invalid package.json")
   };
