@@ -1,4 +1,4 @@
 (* Hello.ml *)
 
 let () =
-  Lib.Util.hello()
+  Lib.hello()

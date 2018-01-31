@@ -5,7 +5,8 @@
   "author": "Jared Forsyth <jared@jaredforsyth.com>",
   "license": "MIT",
   "scripts": {
-    "watch": "esy b && esy jbuilder exec esyi"
+    "watch": "esy b && esy jbuilder exec esyi",
+    "watcher": "watchexec -w lib -w bin npm run watch -- -s"
   },
   "esy": {
     "build": [
@@ -21,6 +22,10 @@
     "@opam/jbuilder": "^1.0.0-beta16",
     "@opam/lambda-term": "^1.11.0",
     "@opam/yojson": "*",
+    "@opam/cudf": "0.9",
+    "@opam/mccs": "*",
+    "lwt-node": "*",
+    "@opam/opam-file-format": "*",
     "@opam/lwt": "^3.1.0"
   },
   "peerDependencies": {
