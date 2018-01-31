@@ -19,7 +19,7 @@ let toDep = ((name, value)) => {
   | _ => failwith("Unexpected dep value: " ++ Yojson.Basic.to_string(value))
   };
 
-  `Npm(switch (getOpam(name)) {
+  switch (getOpam(name)) {
   | Some(name) => Opam(name, NpmSemver.parseTriple(value))
   | None => {
     switch (NpmSemver.parseTriple(value)) {
@@ -33,7 +33,7 @@ let toDep = ((name, value)) => {
     | x => Npm(name, x)
     }
   }
-  })
+  }
 };
 
 /**

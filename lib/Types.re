@@ -1,5 +1,5 @@
 
-type triple = (int, int, int);
+type triple = (int, int, int, option(string));
 
 type semver =
   | Any

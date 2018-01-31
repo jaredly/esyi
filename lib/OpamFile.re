@@ -9,6 +9,14 @@ let rec findVariable = (name, items) => switch items {
 
 let (|?) = (a, b) => switch a { | None => b | Some(a) => a };
 
+let toDep = opamvalue => {
+  switch opamvalue {
+  | String(_, name) => Types.Opam(name, Types.Any)
+  | Option(_, String(_, name), [Prefix_relop(_, `Eq, String(_, version))]) => Types.Opam(name, NpmSemver.parseTriple(version))
+  | _ => failwith("Can't parse this opam dep")
+  }
+};
+
 let process = ({file_contents, file_name}) => {
   let deps = switch (findVariable("depends", file_contents)) {
   | None => []
@@ -21,8 +29,8 @@ let process = ({file_contents, file_name}) => {
     ((deps, devDeps), dep) => {
       switch dep {
       /* This doesn't cover the case where there's an OR that has "test" on each side */
-      | Option(_, value, [Ident(_, "test" | "build")]) => (deps, [`Opam(value), ...devDeps])
-      | _ => ([`Opam(dep), ...deps], devDeps);
+      | Option(_, value, [Ident(_, "test" | "build")]) => (deps, [toDep(value), ...devDeps])
+      | _ => ([toDep(dep), ...deps], devDeps);
       };
     },
     ([], []),
