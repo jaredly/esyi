@@ -11,8 +11,8 @@ let (|?) = (a, b) => switch a { | None => b | Some(a) => a };
 
 let toDep = opamvalue => {
   switch opamvalue {
-  | String(_, name) => Types.Opam(name, Types.Any)
-  | Option(_, String(_, name), [Prefix_relop(_, `Eq, String(_, version))]) => Types.Opam(name, NpmSemver.parseTriple(version))
+  | String(_, name) => (name, Types.Opam(Types.Any))
+  | Option(_, String(_, name), [Prefix_relop(_, `Eq, String(_, version))]) => (name, Types.Opam(NpmSemver.parseTriple(version)))
   | _ => failwith("Can't parse this opam dep")
   }
 };

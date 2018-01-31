@@ -9,6 +9,10 @@ let parsePatch = value => {
   }
 };
 
+let matches = ((major, minor, patch, extra), semver) => {
+  false
+};
+
 let triple = (major, minor, patch) => {
   let (patch, rest) = parsePatch(patch);
   (int_of_string(major), int_of_string(minor), patch, rest)
