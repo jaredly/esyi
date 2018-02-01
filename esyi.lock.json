@@ -21,8 +21,8 @@
     {
       "name": "@opam/lwt",
       "version": [ "Opam", [ 3, 2, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/ocsigen/lwt/archive/3.2.0.tar.gz",
+      "checksum": "cf4256845e18c4d0f39afa7b32b3d6fe",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ],
@@ -33,40 +33,41 @@
     {
       "name": "@opam/menhir",
       "version": [ "Opam", [ 20171222, 0, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "http://gallium.inria.fr/~fpottier/menhir/menhir-20171222.tar.gz",
+      "checksum": "6bbea6ad7b390904c9ce6d3e11d73438",
       "unpackedLocation": "",
       "buildDeps": [ [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ] ]
     },
     {
       "name": "lwt-node",
       "version": [ "Npm", [ 0, 1, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://registry.npmjs.org/lwt-node/-/lwt-node-0.1.0.tgz",
+      "checksum": "6e3c2dc0f5b43d4971fec62e1a757cbe2e7883da",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/ocamlfind",
       "version": [ "Opam", [ 1, 7, 3, "1" ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "http://download.camlcity.org/download/findlib-1.7.3.tar.gz",
+      "checksum": "7d57451218359f7b7dfc969e3684a6da",
       "unpackedLocation": "",
       "buildDeps": [ [ "@opam/conf-m4", [ "Opam", [ 1, 0, 0, null ] ] ] ]
     },
     {
       "name": "@opam/base-bytes",
       "version": [ "Opam", [ 0, 0, 0, "legacy" ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": null,
+      "checksum": "no checksum",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/biniou",
       "version": [ "Opam", [ 1, 2, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/mjambon/biniou/archive/v1.2.0.tar.gz",
+      "checksum": "f3e92358e832ed94eaf23ce622ccc2f9",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ],
@@ -76,8 +77,8 @@
     {
       "name": "@opam/bisect_ppx",
       "version": [ "Opam", [ 1, 3, 2, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/aantron/bisect_ppx/archive/1.3.2.tar.gz",
+      "checksum": "cb4c59e82a2c59560893fb75e02110b7",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
@@ -86,16 +87,17 @@
     {
       "name": "@opam/conf-pkg-config",
       "version": [ "Opam", [ 1, 0, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": null,
+      "checksum": "no checksum",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/cmdliner",
       "version": [ "Opam", [ 1, 0, 2, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "http://erratique.ch/software/cmdliner/releases/cmdliner-1.0.2.tbz",
+      "checksum": "ab2f0130e88e8dcd723ac6154c98a881",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/topkg", [ "Opam", [ 0, 9, 1, null ] ] ],
@@ -106,24 +108,25 @@
     {
       "name": "@opam/ocurl",
       "version": [ "Opam", [ 0, 8, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "http://ygrek.org.ua/p/release/ocurl/ocurl-0.8.0.tar.gz",
+      "checksum": "1622d7d1777192c387cdf72567dc5b2b",
       "unpackedLocation": "",
       "buildDeps": [ [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ] ]
     },
     {
       "name": "@opam/conf-libcurl",
       "version": [ "Opam", [ 1, 0, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": null,
+      "checksum": "no checksum",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/zed",
       "version": [ "Opam", [ 1, 6, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/diml/zed/releases/download/1.6/zed-1.6.tbz",
+      "checksum": "f75c3094af1a22f9801d5ca5eb2d40e0",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
@@ -132,32 +135,35 @@
     {
       "name": "@opam/react",
       "version": [ "Opam", [ 1, 1, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "http://erratique.ch/software/react/releases/react-1.1.0.tbz",
+      "checksum": "a406bc1913690f67a8c9586371c169cd",
       "unpackedLocation": "",
       "buildDeps": [ [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ] ]
     },
     {
       "name": "@opam/ppx_tools",
       "version": [ "Opam", [ 5, 0, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/ocaml-ppx/ppx_tools/archive/5.0+4.04.0.tar.gz",
+      "checksum": "6f512acc15bdd09eb363babb333dc508",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/base-threads",
       "version": [ "Opam", [ 0, 0, 0, "base" ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": null,
+      "checksum": "no checksum",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/ppx_deriving_yojson",
       "version": [ "Opam", [ 3, 1, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/ocaml-ppx/ppx_deriving_yojson/archive/v3.1.tar.gz",
+      "checksum": "83128c06b0569309351886d9fd0dbb74",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/cppo_ocamlbuild", [ "Opam", [ 1, 6, 0, null ] ] ],
@@ -169,8 +175,8 @@
     {
       "name": "@opam/re",
       "version": [ "Opam", [ 1, 7, 1, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/ocaml/ocaml-re/archive/1.7.1.tar.gz",
+      "checksum": "0e45743512b7ab5e6b175f955dc72002",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ],
@@ -180,8 +186,9 @@
     {
       "name": "@opam/ppx_deriving",
       "version": [ "Opam", [ 4, 2, 1, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/ocaml-ppx/ppx_deriving/archive/v4.2.1.tar.gz",
+      "checksum": "2195fccf2a527c3ff9ec5b4e36e2f0a8",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/cppo_ocamlbuild", [ "Opam", [ 1, 6, 0, null ] ] ],
@@ -193,8 +200,9 @@
     {
       "name": "@opam/utop",
       "version": [ "Opam", [ 2, 0, 2, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/diml/utop/releases/download/2.0.2/utop-2.0.2.tbz",
+      "checksum": "48b8a5103868baf6fb42d5ee47b4e4ef",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ],
@@ -204,8 +212,9 @@
     {
       "name": "@opam/astring",
       "version": [ "Opam", [ 0, 8, 3, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "http://erratique.ch/software/astring/releases/astring-0.8.3.tbz",
+      "checksum": "c5bf6352b9ac27fbeab342740f4fa870",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/topkg", [ "Opam", [ 0, 9, 1, null ] ] ],
@@ -216,8 +225,8 @@
     {
       "name": "@opam/fmt",
       "version": [ "Opam", [ 0, 8, 5, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "http://erratique.ch/software/fmt/releases/fmt-0.8.5.tbz",
+      "checksum": "77b64aa6f20f09de28f2405d6195f12c",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/topkg", [ "Opam", [ 0, 9, 1, null ] ] ],
@@ -228,8 +237,9 @@
     {
       "name": "@opam/alcotest",
       "version": [ "Opam", [ 0, 8, 1, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/mirage/alcotest/releases/download/0.8.1/alcotest-0.8.1.tbz",
+      "checksum": "8b8d9f8c9e8c0b34c12e20e24db8dec3",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
@@ -238,16 +248,17 @@
     {
       "name": "@opam/base-unix",
       "version": [ "Opam", [ 0, 0, 0, "base" ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": null,
+      "checksum": "no checksum",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/camomile",
       "version": [ "Opam", [ 0, 8, 7, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/yoriyuki/Camomile/archive/rel-0.8.7.tar.gz",
+      "checksum": "7727d76048d99a6ba157cddf2b4bb0ef",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ],
@@ -257,8 +268,8 @@
     {
       "name": "@opam/yojson",
       "version": [ "Opam", [ 1, 4, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/mjambon/yojson/archive/v1.4.0.tar.gz",
+      "checksum": "729b5e15b2f7c1cb7d402bc301d06d0e",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ],
@@ -268,8 +279,9 @@
     {
       "name": "@opam/lambda-term",
       "version": [ "Opam", [ 1, 12, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/diml/lambda-term/releases/download/1.12.0/lambda-term-1.12.0.tbz",
+      "checksum": "5eaf97fc02e89d29a5f9e58d074e9a6a",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
@@ -278,32 +290,35 @@
     {
       "name": "@esy-ocaml/esy-installer",
       "version": [ "Npm", [ 0, 0, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://registry.npmjs.org/@esy-ocaml/esy-installer/-/esy-installer-0.0.0.tgz",
+      "checksum": "6b0e2bd4ee43531ac74793fe55cfcc3aca197a66",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/opam-file-format",
       "version": [ "Opam", [ 2, 0, 0, "alpha5" ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/ocaml/opam-file-format/archive/2.0-alpha5.tar.gz",
+      "checksum": "2ccdf87e2bd8ed8541dda1d3369b3199",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "refmterr",
       "version": [ "Npm", [ 3, 0, 4, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://registry.npmjs.org/refmterr/-/refmterr-3.0.4.tgz",
+      "checksum": "9fef071bdffd9946e78ba5f984e8cff4ff75e198",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/easy-format",
       "version": [ "Opam", [ 1, 3, 1, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/mjambon/easy-format/archive/v1.3.1.tar.gz",
+      "checksum": "4e163700fb88fdcd6b8976c3a216c8ea",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
@@ -312,8 +327,9 @@
     {
       "name": "@opam/merlin-extend",
       "version": [ "Opam", [ 0, 3, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/let-def/merlin-extend/archive/v0.3.tar.gz",
+      "checksum": "9c6dfd4f53328f02f12fcc265f4e2dda",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ],
@@ -323,24 +339,25 @@
     {
       "name": "@opam/ppx_tools_versioned",
       "version": [ "Opam", [ 5, 1, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/ocaml-ppx/ppx_tools_versioned/archive/5.1.tar.gz",
+      "checksum": "e48cc87d6da6c2f3020fd8dfe8fe50de",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/result",
       "version": [ "Opam", [ 1, 2, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/janestreet/result/archive/1.2.tar.gz",
+      "checksum": "3d5b66c5526918f0f2ca9d6811ef09c8",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/mccs",
       "version": [ "Opam", [ 1, 1, 0, "4" ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/AltGr/ocaml-mccs/archive/1.1+4.tar.gz",
+      "checksum": "1ff2d73ab5c69e1fb58160213fc2d4c9",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
@@ -349,8 +366,8 @@
     {
       "name": "@opam/ppx_derivers",
       "version": [ "Opam", [ 1, 0, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/diml/ppx_derivers/archive/1.0.tar.gz",
+      "checksum": "4ddce8f43fdb9b0ef0ab6a7cbfebc3e3",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
@@ -359,8 +376,9 @@
     {
       "name": "@opam/cudf",
       "version": [ "Opam", [ 0, 9, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://gforge.inria.fr/frs/download.php/36602/cudf-0.9.tar.gz",
+      "checksum": "a4c0e652e56e74c7b388a43f9258d119",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ],
@@ -370,16 +388,16 @@
     {
       "name": "@opam/ocamlbuild",
       "version": [ "Opam", [ 0, 9, 3, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/ocaml/ocamlbuild/archive/0.9.3.tar.gz",
+      "checksum": "d5ba7ee06a51a3333f2168cd431df4ae",
       "unpackedLocation": "",
       "buildDeps": []
     },
     {
       "name": "@opam/lwt_react",
       "version": [ "Opam", [ 1, 1, 0, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/ocsigen/lwt/archive/3.1.0.tar.gz",
+      "checksum": "e80364e38c5fae791a6506b9c113fd29",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
@@ -388,8 +406,8 @@
     {
       "name": "@opam/reason",
       "version": [ "Opam", [ 3, 0, 4, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive": "https://github.com/facebook/reason/archive/3.0.4.tar.gz",
+      "checksum": "0f831682e4d3c57efc1b7c2caadafd11",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ],
@@ -399,8 +417,9 @@
     {
       "name": "@opam/ocaml-migrate-parsetree",
       "version": [ "Opam", [ 1, 0, 7, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/ocaml-ppx/ocaml-migrate-parsetree/archive/v1.0.7.tar.gz",
+      "checksum": "b79b27726fef129ad1804cbb83a05079",
       "unpackedLocation": "",
       "buildDeps": [
         [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ],
@@ -410,16 +429,18 @@
     {
       "name": "@opam/jbuilder",
       "version": [ "Opam", [ 1, 0, 0, "beta9" ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/janestreet/jbuilder/releases/download/1.0+beta9/jbuilder-1.0.beta9.tbz",
+      "checksum": "7a8a71d559ed51712cfb4bba0da6721b",
       "unpackedLocation": "",
       "buildDeps": [ [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ] ]
     },
     {
       "name": "@opam/uchar",
       "version": [ "Opam", [ 0, 0, 2, null ] ],
-      "archive": "",
-      "checksum": "",
+      "archive":
+        "https://github.com/ocaml/uchar/releases/download/v0.0.2/uchar-0.0.2.tbz",
+      "checksum": "c9ba2c738d264c420c642f7bb1cf4a36",
       "unpackedLocation": "",
       "buildDeps": [ [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ] ]
     }
@@ -518,24 +539,26 @@
             {
               "name": "@opam/ocamlbuild",
               "version": [ "Opam", [ 0, 9, 3, null ] ],
-              "archive": "",
-              "checksum": "",
+              "archive":
+                "https://github.com/ocaml/ocamlbuild/archive/0.9.3.tar.gz",
+              "checksum": "d5ba7ee06a51a3333f2168cd431df4ae",
               "unpackedLocation": "",
               "buildDeps": []
             },
             {
               "name": "@opam/base-unix",
               "version": [ "Opam", [ 0, 0, 0, "base" ] ],
-              "archive": "",
-              "checksum": "",
+              "archive": null,
+              "checksum": "no checksum",
               "unpackedLocation": "",
               "buildDeps": []
             },
             {
               "name": "@opam/cppo",
               "version": [ "Opam", [ 1, 6, 0, null ] ],
-              "archive": "",
-              "checksum": "",
+              "archive":
+                "https://github.com/mjambon/cppo/archive/v1.6.0.tar.gz",
+              "checksum": "aee411b3546bc5d198c71ae9185cade4",
               "unpackedLocation": "",
               "buildDeps": [
                 [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
@@ -544,16 +567,17 @@
             {
               "name": "@opam/base-bytes",
               "version": [ "Opam", [ 0, 0, 0, "legacy" ] ],
-              "archive": "",
-              "checksum": "",
+              "archive": null,
+              "checksum": "no checksum",
               "unpackedLocation": "",
               "buildDeps": []
             },
             {
               "name": "@opam/ocamlfind",
               "version": [ "Opam", [ 1, 7, 3, "1" ] ],
-              "archive": "",
-              "checksum": "",
+              "archive":
+                "http://download.camlcity.org/download/findlib-1.7.3.tar.gz",
+              "checksum": "7d57451218359f7b7dfc969e3684a6da",
               "unpackedLocation": "",
               "buildDeps": [
                 [ "@opam/conf-m4", [ "Opam", [ 1, 0, 0, null ] ] ]
@@ -576,16 +600,18 @@
             {
               "name": "@opam/ocamlbuild",
               "version": [ "Opam", [ 0, 9, 3, null ] ],
-              "archive": "",
-              "checksum": "",
+              "archive":
+                "https://github.com/ocaml/ocamlbuild/archive/0.9.3.tar.gz",
+              "checksum": "d5ba7ee06a51a3333f2168cd431df4ae",
               "unpackedLocation": "",
               "buildDeps": []
             },
             {
               "name": "@opam/result",
               "version": [ "Opam", [ 1, 2, 0, null ] ],
-              "archive": "",
-              "checksum": "",
+              "archive":
+                "https://github.com/janestreet/result/archive/1.2.tar.gz",
+              "checksum": "3d5b66c5526918f0f2ca9d6811ef09c8",
               "unpackedLocation": "",
               "buildDeps": []
             }
@@ -606,16 +632,17 @@
             {
               "name": "@opam/base-unix",
               "version": [ "Opam", [ 0, 0, 0, "base" ] ],
-              "archive": "",
-              "checksum": "",
+              "archive": null,
+              "checksum": "no checksum",
               "unpackedLocation": "",
               "buildDeps": []
             },
             {
               "name": "@opam/ocamlfind",
               "version": [ "Opam", [ 1, 7, 3, "1" ] ],
-              "archive": "",
-              "checksum": "",
+              "archive":
+                "http://download.camlcity.org/download/findlib-1.7.3.tar.gz",
+              "checksum": "7d57451218359f7b7dfc969e3684a6da",
               "unpackedLocation": "",
               "buildDeps": [
                 [ "@opam/conf-m4", [ "Opam", [ 1, 0, 0, null ] ] ]
@@ -624,8 +651,8 @@
             {
               "name": "@opam/base-bytes",
               "version": [ "Opam", [ 0, 0, 0, "legacy" ] ],
-              "archive": "",
-              "checksum": "",
+              "archive": null,
+              "checksum": "no checksum",
               "unpackedLocation": "",
               "buildDeps": []
             }

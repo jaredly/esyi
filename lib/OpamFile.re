@@ -44,7 +44,23 @@ let toDep = opamvalue => {
   (withScope(name), s)
 };
 
-let process = ({file_contents, file_name}) => {
+type thinManifest = (string, string);
+type manifest = (
+  OpamParserTypes.opamfile
+  ,
+  option(OpamParserTypes.opamfile)
+);
+
+let getManifest = ((opam, url)) => {
+  (
+    OpamParser.file(opam),
+    Files.exists(url) ? Some(OpamParser.file(url)) : None
+  )
+};
+
+
+
+let process = (({file_contents, file_name}, _)) => {
   /* print_endline("processing" ++ file_name); */
   let deps = switch (findVariable("depends", file_contents)) {
   | None => []
@@ -76,6 +92,36 @@ let process = ({file_contents, file_name}) => {
     ([], [], []),
     deps
   );
+};
+
+let findArchive = contents => {
+  switch (findVariable("archive", contents)) {
+  | Some(String(_, archive)) => archive
+  | _ => {
+    switch (findVariable("http", contents)) {
+    | Some(String(_, archive)) => archive
+    | _ =>
+    switch (findVariable("src", contents)) {
+    | Some(String(_, archive)) => archive
+    | _ => failwith("Invalid url file - no archive")
+    }
+  }
+  }
+  }
+};
+
+let getArchive = ((_, url)) => {
+  switch url {
+  | None => (None, "no checksum")
+  | Some({file_contents, file_name}) => {
+    print_endline(file_name);
+    let archive = findArchive(file_contents);
+    switch (findVariable("checksum", file_contents)) {
+    | Some(String(_, checksum)) => (Some(archive), checksum)
+    | _ => failwith("Invalid url file - no checksum")
+    }
+  }
+  }
 };
 
 /* let process = (parsed: OpamParserTypes.opamfile) => switch parsed {

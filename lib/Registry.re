@@ -50,7 +50,10 @@ let getFromOpamRegistry = fullName => {
           }
         }
         };
-        (semver, base /+ entry /+ "opam")
+        (semver,
+        (base /+ entry /+ "opam",
+        base /+ entry /+ "url")
+        )
       },
       entries
     )

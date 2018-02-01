@@ -1,6 +1,6 @@
 
 type config = [
-  | `OpamFile(OpamParserTypes.opamfile)
+  | `OpamFile(OpamFile.manifest)
   | `PackageJson(Yojson.Basic.json)
 ];
 
@@ -33,10 +33,10 @@ let sortRealVersions = (a, b) => {
 
 type cache = {
   npmPackages: Hashtbl.t(string, Yojson.Basic.json),
-  opamPackages: Hashtbl.t(string, OpamParserTypes.opamfile),
+  opamPackages: Hashtbl.t(string, OpamFile.manifest),
   allBuildDeps: Hashtbl.t(string, list((realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
   availableNpmVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, Yojson.Basic.json))),
-  availableOpamVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, string))),
+  availableOpamVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, OpamFile.thinManifest))),
   manifests: Hashtbl.t((string, realVersion), (config, list(Types.dep), list(Types.dep))),
 };
 
@@ -65,14 +65,6 @@ let versionTicker = ref(0);
 let nextVersion = () => {
   incr(versionTicker);
   versionTicker^
-};
-
-let getDeps = config => {
-  let (deps, buildDeps, _) = switch config {
-  | `OpamFile(opam) => OpamFile.process(opam)
-  | `PackageJson(json) => PackageJson.process(json)
-  };
-  (deps, buildDeps)
 };
 
 let matchesSource = (source, versionCache, package) => {
@@ -141,9 +133,9 @@ let getCachedManifest = (cache, (name, versionPlus)) => {
     let manifest = switch versionPlus {
     | `Github(url) => Registry.getGithubManifest(url)
     | `Npm(version, json) => `PackageJson(json)
-    | `Opam(version, path) => `OpamFile(OpamParser.file(path))
+    | `Opam(version, path) => `OpamFile(OpamFile.getManifest(path))
     };
-    let (deps, buildDeps) = getDeps(manifest);
+    let (deps, buildDeps) = Manifest.getDeps(manifest);
     let res = (manifest, deps, buildDeps);
     Hashtbl.replace(cache, (name, realVersion), res);
     res
@@ -250,11 +242,12 @@ let rec solveDeps = (cache, deps) => {
         let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(state.cache.manifests, (p.Cudf.package, version))) {
         | Not_found => failwith("BAD NEWS no manifest for you")
         };
+        let (archive, checksum) = Manifest.getArchive(manifest);
         ([{
           Lockfile.name: p.Cudf.package,
           version: version,
-          archive: "",
-          checksum: "",
+          archive,
+          checksum,
           unpackedLocation: "",
           buildDeps: [],
         }, ...deps], myBuildDeps @ buildDeps)

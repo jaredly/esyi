@@ -52,7 +52,7 @@ let toDep = ((name, value)) => {
 let process = (parsed) => {
   /* let parsed = Yojson.Basic.from_string(contents); */
   switch parsed {
-  | `Assoc items => {
+  | `Assoc(items) => {
     let dependencies = switch (List.assoc("dependencies", items)) {
     | exception Not_found => []
     | `Assoc(items) => items
@@ -72,4 +72,26 @@ let process = (parsed) => {
   }
   | _ => failwith("Invalid package.json")
   };
+};
+
+let getArchive = (json) => {
+  switch json {
+  | `Assoc(items) => {
+    switch (List.assoc("dist", items)) {
+    | `Assoc(items) => {
+      let archive = switch(List.assoc("tarball", items)) {
+      | `String(archive) => archive
+      | _ => failwith("Bad tarball")
+      };
+      let checksum = switch(List.assoc("shasum", items)) {
+      | `String(checksum) => checksum
+      | _ => failwith("Bad checksum")
+      };
+      (Some(archive), checksum)
+    }
+    | _ => failwith("bad dist")
+    }
+  }
+  | _ => failwith("bad json manifest")
+  }
 };
