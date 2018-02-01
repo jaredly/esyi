@@ -40,13 +40,6 @@ type cache = {
   manifests: Hashtbl.t((string, realVersion), (config, list(Types.dep), list(Types.dep))),
 };
 
-let viewRealVersion = v => switch v {
-| `Github(s) => "github: " ++ s
-| `Git(s) => "git: " ++ s
-| `Npm(t) => "npm: " ++ VersionNumber.viewVersionNumber(t)
-| `Opam(t) => "opam: " ++ VersionNumber.viewVersionNumber(t)
-};
-
 let toRealVersion = versionPlus => switch versionPlus {
 | `Github(x) => `Github(x)
 | `Npm(x, _) => `Npm(x)
@@ -146,7 +139,6 @@ let getCachedManifest = (cache, (name, versionPlus)) => {
 
 let rec addPackage = (name, realVersion, deps, buildDeps, state, manifest) => {
   let version = nextVersion();
-  /* print_endline("Adding a version for " ++ name ++ ": " ++ string_of_int(version)); */
   Hashtbl.replace(state.lookupIntVersion, (name, realVersion), version);
   Hashtbl.replace(state.lookupRealVersion, (name, version), realVersion);
   Hashtbl.replace(state.cache.manifests, (name, realVersion), (manifest, deps, buildDeps));
@@ -190,6 +182,13 @@ let makeRequest = (deps, state) => {
     install: [(root.Cudf.package, Some((`Eq, root.Cudf.version)))]
   }
 };
+
+ let getOpamFile = manifest => {
+   switch manifest {
+   | `PackageJson(_) => None
+   | `OpamFile(({OpamParserTypes.file_name}, _)) => Some(file_name)
+   }
+ };
 
 /**
  *
@@ -238,7 +237,7 @@ let rec solveDeps = (cache, deps) => {
         let version = try(Hashtbl.find(state.lookupRealVersion, (p.Cudf.package, p.Cudf.version))) {
         | Not_found => failwith("BAD NEWS version somehow got lost")
         };
-        print_endline(p.Cudf.package ++ " @ " ++ viewRealVersion(version));
+        print_endline(p.Cudf.package ++ " @ " ++ Lockfile.viewRealVersion(version));
         let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(state.cache.manifests, (p.Cudf.package, version))) {
         | Not_found => failwith("BAD NEWS no manifest for you")
         };
@@ -248,6 +247,7 @@ let rec solveDeps = (cache, deps) => {
           version: version,
           archive,
           checksum,
+          opamFile: getOpamFile(manifest),
           unpackedLocation: "",
           buildDeps: [],
         }, ...deps], myBuildDeps @ buildDeps)
@@ -269,13 +269,13 @@ and processBuildDeps = (cache, deps) => {
     let work = List.find_all(version => satisfies(toRealVersion(version), req), available);
     /* print_endline(name ++ ": " ++ Types.viewReq(req)); */
     let got = work |> List.sort((a, b) => sortRealVersions(toRealVersion(b), toRealVersion(a))) |> List.hd;
-    /* print_endline("Chose " ++ viewRealVersion(toRealVersion(got))); */
+    /* print_endline("Chose " ++ Lockfile.viewRealVersion(toRealVersion(got))); */
     (name, got);
   }) |> List.sort_uniq(compare);
 
   print_endline("Chose these dev deps");
   let allBuildDeps = toInstall |> List.map(((name, versionPlus)) => {
-    print_endline(name ++ ": " ++ viewRealVersion(toRealVersion(versionPlus)));
+    print_endline(name ++ ": " ++ Lockfile.viewRealVersion(toRealVersion(versionPlus)));
     let (manifest, deps, buildDeps) = getCachedManifest(cache.manifests, (name, versionPlus));
     let (solvedDeps, collectedBuildDeps) = solveDeps(cache, deps);
 
@@ -330,10 +330,11 @@ let solve = (config) => {
     manifests: Hashtbl.create(100),
   };
 
-  let (deps, buildDeps, _devDeps) = switch config {
+  let (deps, buildDeps, devDeps) = switch config {
   | `OpamFile(file) => OpamFile.process(file)
   | `PackageJson(json) => PackageJson.process(json)
   };
+  let buildDeps = buildDeps @ devDeps;
 
   let (solvedDeps, collectedBuildDeps) = solveDeps(cache, deps);
 
@@ -343,11 +344,20 @@ let solve = (config) => {
   let allBuildDeps = Hashtbl.fold(
     (key, items, res) => [(key,
       items |> List.map(((realVersion, solvedDeps, buildDeps)) => {
-        Lockfile.bname: key,
+        let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(cache.manifests, (key, realVersion))) {
+        | Not_found => failwith("BAD NEWS no manifest for you")
+        };
+        let (archive, checksum) = Manifest.getArchive(manifest);
+        ({
+        Lockfile.name: key,
+        archive,
+        checksum,
+        opamFile: getOpamFile(manifest),
         version: realVersion,
-        solvedDeps: List.map(addBuildDepsForSolvedDep(cache), solvedDeps),
+        unpackedLocation: "",
         buildDeps: List.map(resolveBuildDep(cache.allBuildDeps), buildDeps)
-      })
+        }, List.map(addBuildDepsForSolvedDep(cache), solvedDeps),)
+    })
     ), ...res],
     cache.allBuildDeps,
     []

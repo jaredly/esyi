@@ -28,6 +28,14 @@ let fromPrefix = (op, version) => switch op {
 
 let withScope = name => "@opam/" ++ name;
 
+let withoutScope = fullName => {
+  let ln = 6;
+  if (String.sub(fullName, 0, ln) != "@opam/") {
+    failwith("Opam name not prefixed: " ++ fullName)
+  };
+  String.sub(fullName, ln, String.length(fullName) - ln);
+};
+
 let toDep = opamvalue => {
   let (name, s) = switch opamvalue {
   | String(_, name) => (name, Types.Opam(Semver.Any))
@@ -57,8 +65,6 @@ let getManifest = ((opam, url)) => {
     Files.exists(url) ? Some(OpamParser.file(url)) : None
   )
 };
-
-
 
 let process = (({file_contents, file_name}, _)) => {
   /* print_endline("processing" ++ file_name); */
@@ -92,6 +98,90 @@ let process = (({file_contents, file_name}, _)) => {
     ([], [], []),
     deps
   );
+};
+
+let filterMap = (fn, items) => {
+  List.map(fn, items) |> List.filter(x => x != None) |> List.map(x => switch (x) { | Some(x) => x | None => assert(false)})
+};
+
+let variables = [
+  ("jobs", "4"),
+  ("make", "make"),
+  ("bin", "$cur__install/bin"),
+  ("lib", "$cur__install/lib"),
+  ("man", "$cur__install/man"),
+];
+
+let replaceVariables = string => {
+  List.fold_left(
+    (string, (name, res)) => {
+      Str.global_replace(
+        Str.regexp_string("%{" ++ name ++ "}%"),
+        res,
+        string
+      )
+    },
+    string,
+    variables
+  )
+};
+
+let toPackageJson = (filename, name, version) => {
+  let file = OpamParser.file(filename);
+  print_endline("opam file " ++ filename);
+  let (deps, buildDeps, devDeps) = process((file, ()));
+  let build = switch(findVariable("build", file.file_contents)) {
+  | None => []
+  | Some(List(_, items))
+  | Some(Group(_, items)) => items
+  | _ => failwith("Bad opam build " ++ filename)
+  };
+  let build = build |> filterMap(item => {
+    switch item {
+    | List(_, items) => {
+      let strings = items |> filterMap(item => {
+        switch item {
+        | String(_, name) => Some(`String(replaceVariables(name)))
+        | Ident(_, ident) => {
+          switch (List.assoc_opt(ident, variables)) {
+          | Some(string) => Some(`String(string))
+          | None => {
+            print_endline("Missing vbl" ++ ident);
+            None
+          }
+          }
+        };
+        | _ => {
+          print_endline("Bad build arg " ++ OpamPrinter.value(item));
+          None
+        }
+        };
+        /* | Ident(_, "make") => Some(`String("make"))
+        | Ident(_, ("bin" | "lib" | "man") as v) => `String("$cur__install/" ++ v)
+        } */
+      });
+      Some(`List(strings))
+    }
+    | _ => {
+      print_endline("Skipping a non-list build thing " ++ OpamPrinter.value(item));
+      None
+    }
+    }
+  });
+
+  `Assoc([
+    ("name", `String(name)),
+    ("version", `String(Lockfile.plainVersionNumber(version))),
+    ("esy", `Assoc([
+      ("build", `List(build)),
+      /* ("buildsInSource", "_build") */
+    ])),
+    ("dependencies", `Assoc(
+      (deps |> List.map(((name, _)) => (name, `String("*"))))
+      @
+      (buildDeps |> List.map(((name, _)) => (name, `String("*"))))
+    ))
+  ])
 };
 
 let findArchive = contents => {

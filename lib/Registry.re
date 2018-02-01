@@ -27,11 +27,7 @@ let getFromNpmRegistry = name => {
 };
 
 let getFromOpamRegistry = fullName => {
-  let ln = 6;
-  if (String.sub(fullName, 0, ln) != "@opam/") {
-    failwith("Opam name not prefixed: " ++ fullName)
-  };
-  let name = String.sub(fullName, ln, String.length(fullName) - ln);
+  let name = OpamFile.withoutScope(fullName);
   let base = "/Users/jared/.esy/opam-repository/packages/" ++ name;
   let (/+) = Filename.concat;
   switch (Files.readDirectory(base)) {

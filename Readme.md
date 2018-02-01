@@ -12,23 +12,22 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 - [x] tracking buildDependencies separately
 - [x] sharing resolved buildDependencies when possible
 - [x] generating a lockfile! (it's yojson at the moment, so don't expect anything fancy)
+- [x] fetching all the things, with some opam -> package.json conversion
 
 ## Still to do
 
 - [ ] opam conversion
+    - [ ] incorporate `esy-opam-overrides`
     - [ ] convert opam `(>= 1.2.0 & < 1.3.0)` into `~1.2.0` (and similar)
-- [ ] make the generated lockfile a nicer format of json
-- [ ] the "fetch" phase
-    - [ ] decide whether to use a global cache or not
-    - [ ] fetch all the things
-    - [ ] generate package.json files probably
+- [ ] finish opam -> package.json conversion
 - [ ] deciding what we want to do with devDependencies (I think maybe I'll lump them in with buildDependencies?)
+- [ ] make the generated lockfile a nicer format (maybe yaml/toml?)
 - [ ] parallelize some things, but make sure not to compromise reproducability
+- [ ] maybe use a global cache for fetched things? currently using a project-local cache
 - [ ] handle the not-fresh case
     - [ ] inflate from lockfile
     - [ ] check staleness
     - [ ] add/remove/upgrade deps
-
 
 ## Later on
 

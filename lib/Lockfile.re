@@ -71,17 +71,18 @@ type solvedDep = {
   version: realVersion,
   archive: option(string), /* git+some.git or some.zip or some.tgz */
   checksum: string,
+  opamFile: option(string),
   unpackedLocation: string,
   buildDeps: list((string, realVersion)),
 }
 
-[@deriving yojson]
+/* [@deriving yojson]
 and buildDep = {
   bname: string,
   version: realVersion,
   solvedDeps: list(solvedDep),
   buildDeps: list((string, realVersion))
-}
+} */
 
 [@deriving yojson]
 and lockfile = {
@@ -94,7 +95,21 @@ and lockfile = {
   solvedDeps: list(solvedDep),
   solvedBuildDeps: list((string, realVersion)),
   /* A mapping of name:version to the solved dependencies, and the solved build deps */
-  allBuildDeps: list((string, list(buildDep))),
+  allBuildDeps: list((string, list((solvedDep, list(solvedDep))))),
+};
+
+let viewRealVersion = v => switch v {
+| `Github(s) => "github-" ++ s
+| `Git(s) => "git-" ++ s
+| `Npm(t) => "npm-" ++ VersionNumber.viewVersionNumber(t)
+| `Opam(t) => "opam-" ++ VersionNumber.viewVersionNumber(t)
+};
+
+let plainVersionNumber = v => switch v {
+| `Github(s) => s
+| `Git(s) => s
+| `Npm(t) => VersionNumber.viewVersionNumber(t)
+| `Opam(t) => VersionNumber.viewVersionNumber(t)
 };
 
 

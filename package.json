@@ -5,7 +5,7 @@
   "author": "Jared Forsyth <jared@jaredforsyth.com>",
   "license": "MIT",
   "scripts": {
-    "watch": "esy b && esy jbuilder exec esyi",
+    "watch": "esy b && esy jbuilder exec esyi ../testing",
     "watcher": "watchexec -w lib -w bin npm run watch -- -s"
   },
   "esy": {
