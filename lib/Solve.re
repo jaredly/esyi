@@ -22,10 +22,19 @@ let satisfies = (realVersion, req) => {
   }
 };
 
+let sortRealVersions = (a, b) => {
+  switch (a, b) {
+  | (`Github(a), `Github(b)) => 0
+  | (`Npm(a), `Npm(b)) => Types.compareTriples(a, b)
+  | (`Opam(a), `Opam(b)) => Types.compareTriples(a, b)
+  | _ => 0
+  }
+};
+
 type cache = {
   npmPackages: Hashtbl.t(string, Yojson.Basic.json),
   opamPackages: Hashtbl.t(string, OpamParserTypes.opamfile),
-  allBuildDeps: Hashtbl.t(string, list((realVersion, list(Lockfile.solvedDep)))),
+  allBuildDeps: Hashtbl.t(string, list((realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
   availableNpmVersions: Hashtbl.t(string, list((Types.triple, Yojson.Basic.json))),
   availableOpamVersions: Hashtbl.t(string, list((Types.triple, string))),
   manifests: Hashtbl.t((string, realVersion), (config, list(Types.dep), list(Types.dep))),
@@ -216,37 +225,42 @@ let rec solveDeps = (cache, deps) => {
     lookupIntVersion: Hashtbl.create(100),
   };
 
-  /** This is where most of the work happens, file io, network requests, etc. */
-  List.iter(addToUniverse(state), deps);
+  if (deps == []) {
+    ([], [])
+  } else {
 
-  let request = makeRequest(deps, state);
-  let preamble = Cudf.default_preamble;
-  /** Here we invoke the solver! Might also take a while, but probably won't */
-  switch (Mccs.resolve_cudf(~verbose=true, ~timeout=5., "-notuptodate", (preamble, state.universe, request))) {
-  | None => failwith("Unable to resolve")
-  | Some((a, universe)) => {
-    let packages = Cudf.get_packages(~filter=(p => p.Cudf.installed), universe);
-    print_endline("Installed packages:");
-    packages
-    |> List.filter(p => p.Cudf.package != rootName)
-    |> List.fold_left(((deps, buildDeps), p) => {
-      let version = try(Hashtbl.find(state.lookupRealVersion, (p.Cudf.package, p.Cudf.version))) {
-      | Not_found => failwith("BAD NEWS version somehow got lost")
-      };
-      print_endline(p.Cudf.package ++ " @ " ++ viewRealVersion(version));
-      let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(state.cache.manifests, (p.Cudf.package, version))) {
-      | Not_found => failwith("BAD NEWS no manifest for you")
-      };
-      ([{
-        Lockfile.name: p.Cudf.package,
-        version: viewRealVersion(version),
-        archive: "",
-        checksum: "",
-        unpackedLocation: "",
-        buildDeps: [],
-      }, ...deps], myBuildDeps @ buildDeps)
-    }, ([], []))
-  }
+    /** This is where most of the work happens, file io, network requests, etc. */
+    List.iter(addToUniverse(state), deps);
+
+    let request = makeRequest(deps, state);
+    let preamble = Cudf.default_preamble;
+    /** Here we invoke the solver! Might also take a while, but probably won't */
+    switch (Mccs.resolve_cudf(~verbose=true, ~timeout=5., "-notuptodate", (preamble, state.universe, request))) {
+    | None => failwith("Unable to resolve")
+    | Some((a, universe)) => {
+      let packages = Cudf.get_packages(~filter=(p => p.Cudf.installed), universe);
+      print_endline("Installed packages:");
+      packages
+      |> List.filter(p => p.Cudf.package != rootName)
+      |> List.fold_left(((deps, buildDeps), p) => {
+        let version = try(Hashtbl.find(state.lookupRealVersion, (p.Cudf.package, p.Cudf.version))) {
+        | Not_found => failwith("BAD NEWS version somehow got lost")
+        };
+        print_endline(p.Cudf.package ++ " @ " ++ viewRealVersion(version));
+        let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(state.cache.manifests, (p.Cudf.package, version))) {
+        | Not_found => failwith("BAD NEWS no manifest for you")
+        };
+        ([{
+          Lockfile.name: p.Cudf.package,
+          version: version,
+          archive: "",
+          checksum: "",
+          unpackedLocation: "",
+          buildDeps: [],
+        }, ...deps], myBuildDeps @ buildDeps)
+      }, ([], []))
+    }
+    }
   };
 }
 
@@ -254,14 +268,63 @@ and processBuildDeps = (cache, deps) => {
   let unmetDeps = deps |> List.filter(((name, req)) => {
     switch (Hashtbl.find(cache.allBuildDeps, name)) {
     | exception Not_found => true
-    | items => !List.exists(((version, _)) => satisfies(version, req), items)
+    | items => !List.exists(((version, _, _)) => satisfies(version, req), items)
     }
   });
   let toInstall = unmetDeps |> List.map(((name, req)) => {
     let available = getAvailableVersions(cache, (name, req));
-    (name, List.find(version => satisfies(toRealVersion(version), req), available));
+    let work = List.find_all(version => satisfies(toRealVersion(version), req), available);
+    /* print_endline(name ++ ": " ++ Types.viewReq(req)); */
+    let got = work |> List.sort((a, b) => sortRealVersions(toRealVersion(b), toRealVersion(a))) |> List.hd;
+    /* print_endline("Chose " ++ viewRealVersion(toRealVersion(got))); */
+    (name, got);
   }) |> List.sort_uniq(compare);
-  failwith("Not impl");
+
+  print_endline("Chose these dev deps");
+  let allBuildDeps = toInstall |> List.map(((name, versionPlus)) => {
+    print_endline(name ++ ": " ++ viewRealVersion(toRealVersion(versionPlus)));
+    let (manifest, deps, buildDeps) = getCachedManifest(cache.manifests, (name, versionPlus));
+    let (solvedDeps, collectedBuildDeps) = solveDeps(cache, deps);
+
+    let current = switch (Hashtbl.find(cache.allBuildDeps, name)) {
+    | exception Not_found => []
+    | items => items
+    };
+    Hashtbl.replace(cache.allBuildDeps, name, [
+      (toRealVersion(versionPlus), solvedDeps, buildDeps),
+      ...current
+    ]);
+
+    buildDeps @ collectedBuildDeps
+  }) |> List.concat;
+  if (allBuildDeps != []) {
+    processBuildDeps(cache, allBuildDeps)
+  };
+};
+
+let resolveBuildDep = (cache, (name, req)) => {
+  switch (Hashtbl.find(cache, name)) {
+  | exception Not_found => failwith("No build deps during final resolution for " ++ name)
+  | items => {
+    let work = List.find_all(((version, _, _)) => satisfies(version, req), items)
+    |> List.map(((version, _, _)) => version);
+    /* print_endline(name ++ ": " ++ Types.viewReq(req)); */
+    (name, work |> List.sort((a, b) => sortRealVersions(b, a)) |> List.hd);
+  }
+  }
+};
+
+let addBuildDepsForSolvedDep = (cache, solvedDep) => {
+  let key = (solvedDep.Lockfile.name, solvedDep.Lockfile.version);
+  let (_, _, buildDeps) = switch (Hashtbl.find(cache.manifests, key)) {
+  | exception Not_found => failwith("No manifest during final resolution")
+  | x => x
+  };
+
+  {
+    ...solvedDep,
+    Lockfile.buildDeps: List.map(resolveBuildDep(cache.allBuildDeps), buildDeps)
+  }
 };
 
 let solve = (config) => {
@@ -282,13 +345,26 @@ let solve = (config) => {
   let (solvedDeps, collectedBuildDeps) = solveDeps(cache, deps);
 
   print_endline("Now dev deps");
-  let _ = processBuildDeps(cache, collectedBuildDeps);
+  processBuildDeps(cache, buildDeps @ collectedBuildDeps);
 
-  let _lockfile = {
-    ...Lockfile.empty,
-    requestedDeps: deps,
+  let allBuildDeps = Hashtbl.fold(
+    (key, items, res) => [(key,
+      items |> List.map(((realVersion, solvedDeps, buildDeps)) => (
+        realVersion,
+        List.map(addBuildDepsForSolvedDep(cache), solvedDeps),
+        List.map(resolveBuildDep(cache.allBuildDeps), buildDeps)
+      ))
+    ), ...res],
+    cache.allBuildDeps,
+    []
+  );
+
+    /* ...Lockfile.empty, */
+  {
+    Lockfile.requestedDeps: deps,
     requestedBuildDeps: buildDeps,
-    solvedDeps
+    allBuildDeps,
+    solvedDeps: List.map(addBuildDepsForSolvedDep(cache), solvedDeps),
+    solvedBuildDeps: List.map(resolveBuildDep(cache.allBuildDeps), buildDeps)
   };
-  print_endline("Dones")
 };

@@ -26,8 +26,8 @@ let matches = ((major, minor, patch, extra), semver) => {
   | Exactly((m, i, p, e)) => m == major && i == minor && p == patch && e == extra
   | UpToMinor((m, i, p, e)) => m == major && i == minor && ((p == patch && e == extra) || p <= patch)
   | UpToMajor((m, i, p, e)) => m == major && ((i == minor && p == patch && e == extra) || i <= minor)
-  | AtLeast((m, i, p, e)) =>
-    (
+  | AtLeast((m, i, p, e)) => compareTriples((m, i, p, e), (major, minor, patch, extra)) <= 0
+    /* (
       m < major ||
       (m == major && (
         i < minor || (
@@ -38,7 +38,7 @@ let matches = ((major, minor, patch, extra), semver) => {
           )
         )
       ))
-    )
+    ) */
   /* (m == major && i == minor && p == patch && e == extra) */
   /* | AtMost((m, i, p, e)) => (m == major && i == minor && p == patch && e == extra)
   | GreaterThan((m, i, p, e)) => (m == major && i == minor && p == patch && e == extra)

@@ -1,6 +1,8 @@
 
+[@deriving yojson]
 type triple = (int, int, int, option(string));
 
+[@deriving yojson]
 type semver =
   | Any
   | Exactly(triple)
@@ -11,6 +13,7 @@ type semver =
   | UpToMinor(triple)
   | UpToMajor(triple);
 
+[@deriving yojson]
 type depSource =
   | Npm(semver)
   | Github(string) /* maybe cover auth here, maybe subdir support */
@@ -18,6 +21,7 @@ type depSource =
   | Git(string)
   ;
 
+[@deriving yojson]
 type dep = (string, depSource);
 
 let viewTriple = ((m, i, p, r)) => {
@@ -26,6 +30,45 @@ let viewTriple = ((m, i, p, r)) => {
   | None => base
   | Some(e) => base ++ "-" ++ e
   }
+};
+
+let after = (a, prefix) => {
+  let al = String.length(a);
+  let pl = String.length(prefix);
+  if (al > pl && String.sub(a, 0, pl) == prefix) {
+    Some(String.sub(a, pl, al - pl))
+  } else {
+    None
+  }
+};
+
+let compareExtra = (a, b) => {
+  switch (a, b) {
+  | (Some(a), Some(b)) => {
+    switch (after(a, "beta"), after(b, "beta")) {
+    | (Some(a), Some(b)) => try(int_of_string(a) - int_of_string(b)) { | _ => compare(a, b) }
+    | _ => switch (after(a, "alpha"), after(b, "alpha")) {
+      | (Some(a), Some(b)) => try(int_of_string(a) - int_of_string(b)) { | _ => compare(a, b) }
+      | _ => try(int_of_string(a) - int_of_string(b)) { | _ => compare(a, b) }
+      }
+    }
+  }
+  | _ => compare(a, b)
+  }
+};
+
+let compareTriples = ((ma, ia, pa, ra), (mb, ib, pb, rb)) => {
+  ma != mb
+  ? (ma - mb)
+  : (
+    ia != ib
+    ? (ia - ib)
+    : (
+      pa != pb
+      ? (pa - pb)
+      : compareExtra(ra, rb)
+    )
+  )
 };
 
 let viewSemver = semver => switch  semver {
@@ -37,4 +80,11 @@ let viewSemver = semver => switch  semver {
   /* | AtMost(t) => "<=" ++ viewTriple(t)
   | GreaterThan(t) => ">" ++ viewTriple(t)
   | LessThan(t) => "<" ++ viewTriple(t) */
+};
+
+let viewReq = req => switch req {
+| Github(s) => "github: " ++ s
+| Git(s) => "git: " ++ s
+| Npm(t) => "npm: " ++ viewSemver(t)
+| Opam(t) => "opam: " ++ viewSemver(t)
 };

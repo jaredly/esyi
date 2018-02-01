@@ -201,6 +201,32 @@
   peerDependencies:
     ocaml "*"
 
+"@opam/cppo@ >= 1.6.0":
+  version "1.6.1"
+  uid "97dd53c54787a849941f7eae36018f99"
+  resolved "@opam/cppo@1.6.1-97dd53c54787a849941f7eae36018f99.tgz"
+  dependencies:
+    "@esy-ocaml/esy-installer" "^0.0.0"
+    "@esy-ocaml/substs" "^0.0.1"
+    "@opam/base-bytes" "*"
+    "@opam/base-unix" "*"
+    "@opam/jbuilder" " >= 1.0.0-beta10"
+  peerDependencies:
+    ocaml "*"
+
+"@opam/cppo_ocamlbuild@*":
+  version "1.6.0"
+  uid "6fd85090225019f09a636edd7e6d011e"
+  resolved "@opam/cppo_ocamlbuild@1.6.0-6fd85090225019f09a636edd7e6d011e.tgz"
+  dependencies:
+    "@esy-ocaml/esy-installer" "^0.0.0"
+    "@esy-ocaml/substs" "^0.0.1"
+    "@opam/cppo" " >= 1.6.0"
+    "@opam/jbuilder" " >= 1.0.0-beta10"
+    "@opam/ocamlbuild" "*"
+  peerDependencies:
+    ocaml "*"
+
 "@opam/cudf@ >= 0.7.0", "@opam/cudf@0.9":
   version "0.9.0"
   uid "68efd1b03b4e1495d74eeb4b716b913a"
@@ -410,7 +436,7 @@
   peerDependencies:
     ocaml " >= 4.3.0"
 
-"@opam/ocamlfind@", "@opam/ocamlfind@ >= 1.5.0", "@opam/ocamlfind@ >= 1.5.2", "@opam/ocamlfind@ >= 1.5.3", "@opam/ocamlfind@ >= 1.6.1", "@opam/ocamlfind@ >= 1.7.2", "@opam/ocamlfind@ >= 1.7.3--1", "@opam/ocamlfind@*":
+"@opam/ocamlfind@", "@opam/ocamlfind@ >= 1.5.0", "@opam/ocamlfind@ >= 1.5.2", "@opam/ocamlfind@ >= 1.5.3", "@opam/ocamlfind@ >= 1.6.0", "@opam/ocamlfind@ >= 1.6.1", "@opam/ocamlfind@ >= 1.7.2", "@opam/ocamlfind@ >= 1.7.3--1", "@opam/ocamlfind@*":
   version "1.7.3--1"
   uid "2e5446e160cfd1aae7944b2f7add39b7"
   resolved "@opam/ocamlfind@1.7.3--1-2e5446e160cfd1aae7944b2f7add39b7.tgz"
@@ -443,6 +469,63 @@
     "@esy-ocaml/substs" "^0.0.1"
   peerDependencies:
     ocaml "*"
+
+"@opam/ppx_derivers@*":
+  version "1.0.0"
+  uid "8f34e516ed653f2d9d6fbae0d01e64d8"
+  resolved "@opam/ppx_derivers@1.0.0-8f34e516ed653f2d9d6fbae0d01e64d8.tgz"
+  dependencies:
+    "@esy-ocaml/esy-installer" "^0.0.0"
+    "@esy-ocaml/substs" "^0.0.1"
+    "@opam/jbuilder" " >= 1.0.0-beta7"
+  peerDependencies:
+    ocaml "*"
+
+"@opam/ppx_deriving@ >= 4.0.0  < 5.0.0":
+  version "4.2.1"
+  uid "25184a5ac3bcba32981d0f83f1f03614"
+  resolved "@opam/ppx_deriving@4.2.1-25184a5ac3bcba32981d0f83f1f03614.tgz"
+  dependencies:
+    "@esy-ocaml/esy-installer" "^0.0.0"
+    "@esy-ocaml/substs" "^0.0.1"
+    "@opam/cppo" "*"
+    "@opam/cppo_ocamlbuild" "*"
+    "@opam/ocaml-migrate-parsetree" "*"
+    "@opam/ocamlbuild" "*"
+    "@opam/ocamlfind" " >= 1.6.0"
+    "@opam/ppx_derivers" "*"
+    "@opam/ppx_tools" " >= 4.2.3"
+    "@opam/result" "*"
+  peerDependencies:
+    ocaml " > 4.3.0"
+
+"@opam/ppx_deriving_yojson@*":
+  version "3.1.0"
+  uid "1d6b71b8c5e2a367eb62a2f5915d5dfe"
+  resolved "@opam/ppx_deriving_yojson@3.1.0-1d6b71b8c5e2a367eb62a2f5915d5dfe.tgz"
+  dependencies:
+    "@esy-ocaml/esy-installer" "^0.0.0"
+    "@esy-ocaml/substs" "^0.0.1"
+    "@opam/cppo" "*"
+    "@opam/cppo_ocamlbuild" "*"
+    "@opam/ocamlbuild" "*"
+    "@opam/ocamlfind" "*"
+    "@opam/ppx_deriving" " >= 4.0.0  < 5.0.0"
+    "@opam/result" "*"
+    "@opam/yojson" "*"
+  peerDependencies:
+    ocaml "*"
+
+"@opam/ppx_tools@ >= 4.2.3":
+  version "5.1.0-4060"
+  uid "137d38e24bcb38a34eb70b5137a7689d"
+  resolved "@opam/ppx_tools@5.1.0-4060-137d38e24bcb38a34eb70b5137a7689d.tgz"
+  dependencies:
+    "@esy-ocaml/esy-installer" "^0.0.0"
+    "@esy-ocaml/substs" "^0.0.1"
+    "@opam/ocamlfind" " >= 1.5.0"
+  peerDependencies:
+    ocaml " >= 4.6.0  < 4.7.0"
 
 "@opam/ppx_tools_versioned@ >= 5.0.1", "@opam/ppx_tools_versioned@*":
   version "5.1.0"

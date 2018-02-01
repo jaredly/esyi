@@ -57,15 +57,25 @@
  *
  */
 
+[@deriving yojson]
+type realVersion = [
+  | `Github(string)
+  | `Npm(Types.triple)
+  | `Opam(Types.triple)
+  | `Git(string)
+];
+
+[@deriving yojson]
 type solvedDep = {
   name: string,
-  version: string,
+  version: realVersion,
   archive: string, /* git+some.git or some.zip or some.tgz */
   checksum: string,
   unpackedLocation: string,
-  buildDeps: list((string, string)),
+  buildDeps: list((string, realVersion)),
 }
 
+[@deriving yojson]
 and lockfile = {
   requestedDeps: list(Types.dep),
   requestedBuildDeps: list(Types.dep),
@@ -74,10 +84,11 @@ and lockfile = {
   /* solvedDevDeps: list(solvedDep), */
 
   solvedDeps: list(solvedDep),
-  solvedBuildDeps: list((string, string)),
+  solvedBuildDeps: list((string, realVersion)),
   /* A mapping of name:version to the solved dependencies, and the solved build deps */
-  allBuildDeps: list(((string, string), list(solvedDep), list((string, string)))),
+  allBuildDeps: list((string, list((realVersion, list(solvedDep), list((string, realVersion)))))),
 };
+
 
 let empty = {
   requestedDeps: [],
