@@ -1,64 +1,35 @@
 # Esy Install
 
-But in ocaml this time
+But in ocaml this time. With a real solver, so we get good dependencies.
 
-## Want to solve...
+## Completed
 
-First, crawl all of the packages. Get from the registry.
-Github things can fetch the package.json straight.
+- [x] parsing opam files & mostly converting the dependencies (I bail on the more complex boolean operations, pretending they are "any")
+- [x] parsing package.json files
+- [x] talking to the npm registry
+- [x] looking in a local copy of the opam registry
+- [x] using MCCS (a SAT solver) to find a valid assignment of dependencies!
+- [x] tracking buildDependencies separately
+- [x] sharing resolved buildDependencies when possible
+- [x] generating a lockfile! (it's yojson at the moment, so don't expect anything fancy)
 
-> Start at root.
-> build up a potential solution
-> *track js deps separately* because they have different rules
-> "dependencies" is for normal (reason) dependencies
-> "jsDependencies" is for things that you also want installed, but they are normal js-land deps
->   so they can have conflicts just fine
-> esy_modules
-> build_modules
+## Still to do
 
-What if I did something simple as a first pass, and then went to a SAT solver if it was hard?
-- might cause weird behavior when crossing that threshhold.
-
-```
-toplevel/
-    dependencies/
-        esy (normal reason dependencies)
-            minimist.re
-            yojson
-                build
-                    jbuilder (buut this can be deduped with /build)
-        build (buildtime only, host arch)
-            jbuilder
-        target_ios (dependencies for ios! resolved separately)
-            some_ios_lib
-```
-
----
-
-Might need to split out `devBuildDeps` from `devDeps`, so that devDeps can be linkTime.
-Orrr maybe just ditch devDeps entirely, and support an `esy.dev.json`, which `esy i` picks
-up for you.
-
----
+- [ ] opam conversion
+    - [ ] convert opam `(>= 1.2.0 & < 1.3.0)` into `~1.2.0` (and similar)
+- [ ] make the generated lockfile a nicer format of json
+- [ ] the "fetch" phase
+    - [ ] decide whether to use a global cache or not
+    - [ ] fetch all the things
+    - [ ] generate package.json files probably
+- [ ] deciding what we want to do with devDependencies (I think maybe I'll lump them in with buildDependencies?)
+- [ ] parallelize some things, but make sure not to compromise reproducability
+- [ ] handle the not-fresh case
+    - [ ] inflate from lockfile
+    - [ ] check staleness
+    - [ ] add/remove/upgrade deps
 
 
+## Later on
 
-"Simplest case"
-- take the latest allowed of everything
-- got to distinguish
-
-
-
----
-
-
-
-Using CUDF & mccs for reason deps
-
-- for manual overrides, I just replace any dep that anyone has with that override
-
-
-
-For js deps, I'll do a first pass where I try it with CUDF. If it proves impossible, then fall back to something dumb...
-maybe where I loop through to find all conflicts?
-and when I find one, remove it, treat it separately
+- [ ] support multiple architecture targets!
