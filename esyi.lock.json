@@ -1,0 +1,580 @@
+{
+  "requestedDeps": [
+    [ "@opam/lambda-term", [ "Opam", [ "UpToMajor", [ 1, 11, 0, null ] ] ] ],
+    [ "@opam/yojson", [ "Opam", [ "Any" ] ] ],
+    [ "@opam/cudf", [ "Opam", [ "UpToMinor", [ 0, 9, 0, null ] ] ] ],
+    [ "@opam/ocurl", [ "Opam", [ "Any" ] ] ],
+    [ "@opam/ppx_deriving_yojson", [ "Opam", [ "Any" ] ] ],
+    [ "@opam/mccs", [ "Opam", [ "Any" ] ] ],
+    [ "lwt-node", [ "Npm", [ "Any" ] ] ],
+    [ "@opam/opam-file-format", [ "Opam", [ "Any" ] ] ],
+    [ "@opam/lwt", [ "Opam", [ "UpToMajor", [ 3, 1, 0, null ] ] ] ]
+  ],
+  "requestedBuildDeps": [
+    [ "@opam/jbuilder", [ "Opam", [ "UpToMajor", [ 1, 0, 0, "beta16" ] ] ] ],
+    [
+      "@esy-ocaml/esy-installer",
+      [ "Npm", [ "UpToMajor", [ 0, 0, 0, null ] ] ]
+    ]
+  ],
+  "solvedDeps": [
+    {
+      "name": "@opam/lwt",
+      "version": [ "Opam", [ 3, 2, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ],
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ],
+        [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/menhir",
+      "version": [ "Opam", [ 20171222, 0, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [ [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ] ]
+    },
+    {
+      "name": "lwt-node",
+      "version": [ "Npm", [ 0, 1, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/ocamlfind",
+      "version": [ "Opam", [ 1, 7, 3, "1" ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [ [ "@opam/conf-m4", [ "Opam", [ 1, 0, 0, null ] ] ] ]
+    },
+    {
+      "name": "@opam/base-bytes",
+      "version": [ "Opam", [ 0, 0, 0, "legacy" ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/biniou",
+      "version": [ "Opam", [ 1, 2, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ],
+        [ "@opam/conf-which", [ "Opam", [ 1, 0, 0, null ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/bisect_ppx",
+      "version": [ "Opam", [ 1, 3, 2, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/conf-pkg-config",
+      "version": [ "Opam", [ 1, 0, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/cmdliner",
+      "version": [ "Opam", [ 1, 0, 2, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/topkg", [ "Opam", [ 0, 9, 1, null ] ] ],
+        [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ],
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/ocurl",
+      "version": [ "Opam", [ 0, 8, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [ [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ] ]
+    },
+    {
+      "name": "@opam/conf-libcurl",
+      "version": [ "Opam", [ 1, 0, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/zed",
+      "version": [ "Opam", [ 1, 6, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/react",
+      "version": [ "Opam", [ 1, 1, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [ [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ] ]
+    },
+    {
+      "name": "@opam/ppx_tools",
+      "version": [ "Opam", [ 5, 0, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/base-threads",
+      "version": [ "Opam", [ 0, 0, 0, "base" ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/ppx_deriving_yojson",
+      "version": [ "Opam", [ 3, 1, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/cppo_ocamlbuild", [ "Opam", [ 1, 6, 0, null ] ] ],
+        [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ],
+        [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ],
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/re",
+      "version": [ "Opam", [ 1, 7, 1, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ],
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/ppx_deriving",
+      "version": [ "Opam", [ 4, 2, 1, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/cppo_ocamlbuild", [ "Opam", [ 1, 6, 0, null ] ] ],
+        [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ],
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ],
+        [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/utop",
+      "version": [ "Opam", [ 2, 0, 2, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ],
+        [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/astring",
+      "version": [ "Opam", [ 0, 8, 3, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/topkg", [ "Opam", [ 0, 9, 1, null ] ] ],
+        [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ],
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/fmt",
+      "version": [ "Opam", [ 0, 8, 5, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/topkg", [ "Opam", [ 0, 9, 1, null ] ] ],
+        [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ],
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/alcotest",
+      "version": [ "Opam", [ 0, 8, 1, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/base-unix",
+      "version": [ "Opam", [ 0, 0, 0, "base" ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/camomile",
+      "version": [ "Opam", [ 0, 8, 7, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ],
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/yojson",
+      "version": [ "Opam", [ 1, 4, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ],
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/lambda-term",
+      "version": [ "Opam", [ 1, 12, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@esy-ocaml/esy-installer",
+      "version": [ "Npm", [ 0, 0, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/opam-file-format",
+      "version": [ "Opam", [ 2, 0, 0, "alpha5" ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "refmterr",
+      "version": [ "Npm", [ 3, 0, 4, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/easy-format",
+      "version": [ "Opam", [ 1, 3, 1, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/merlin-extend",
+      "version": [ "Opam", [ 0, 3, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/cppo", [ "Opam", [ 1, 6, 0, null ] ] ],
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/ppx_tools_versioned",
+      "version": [ "Opam", [ 5, 1, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/result",
+      "version": [ "Opam", [ 1, 2, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/mccs",
+      "version": [ "Opam", [ 1, 1, 0, "4" ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/ppx_derivers",
+      "version": [ "Opam", [ 1, 0, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/cudf",
+      "version": [ "Opam", [ 0, 9, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ],
+        [ "@opam/conf-perl", [ "Opam", [ 1, 0, 0, null ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/ocamlbuild",
+      "version": [ "Opam", [ 0, 9, 3, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": []
+    },
+    {
+      "name": "@opam/lwt_react",
+      "version": [ "Opam", [ 1, 1, 0, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/reason",
+      "version": [ "Opam", [ 3, 0, 4, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ],
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/ocaml-migrate-parsetree",
+      "version": [ "Opam", [ 1, 0, 7, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [
+        [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ],
+        [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ]
+      ]
+    },
+    {
+      "name": "@opam/jbuilder",
+      "version": [ "Opam", [ 1, 0, 0, "beta9" ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [ [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ] ]
+    },
+    {
+      "name": "@opam/uchar",
+      "version": [ "Opam", [ 0, 0, 2, null ] ],
+      "archive": "",
+      "checksum": "",
+      "unpackedLocation": "",
+      "buildDeps": [ [ "@opam/ocamlbuild", [ "Opam", [ 0, 12, 0, null ] ] ] ]
+    }
+  ],
+  "solvedBuildDeps": [
+    [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ],
+    [ "@esy-ocaml/esy-installer", [ "Npm", [ 0, 0, 0, null ] ] ]
+  ],
+  "allBuildDeps": [
+    [
+      "@opam/ocamlfind",
+      [
+        [
+          [ "Opam", [ 1, 7, 3, "1" ] ],
+          [],
+          [ [ "@opam/conf-m4", [ "Opam", [ 1, 0, 0, null ] ] ] ]
+        ]
+      ]
+    ],
+    [ "@opam/conf-m4", [ [ [ "Opam", [ 1, 0, 0, null ] ], [], [] ] ] ],
+    [
+      "@opam/jbuilder",
+      [
+        [
+          [ "Opam", [ 1, 0, 0, "beta16" ] ],
+          [],
+          [ [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ] ]
+        ]
+      ]
+    ],
+    [
+      "@esy-ocaml/esy-installer",
+      [ [ [ "Npm", [ 0, 0, 0, null ] ], [], [] ] ]
+    ],
+    [ "@opam/conf-which", [ [ [ "Opam", [ 1, 0, 0, null ] ], [], [] ] ] ],
+    [ "@opam/ocamlbuild", [ [ [ "Opam", [ 0, 12, 0, null ] ], [], [] ] ] ],
+    [ "@opam/conf-perl", [ [ [ "Opam", [ 1, 0, 0, null ] ], [], [] ] ] ],
+    [
+      "@opam/cppo_ocamlbuild",
+      [
+        [
+          [ "Opam", [ 1, 6, 0, null ] ],
+          [
+            {
+              "name": "@opam/ocamlbuild",
+              "version": [ "Opam", [ 0, 9, 3, null ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": []
+            },
+            {
+              "name": "@opam/base-unix",
+              "version": [ "Opam", [ 0, 0, 0, "base" ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": []
+            },
+            {
+              "name": "@opam/cppo",
+              "version": [ "Opam", [ 1, 6, 0, null ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": [
+                [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+              ]
+            },
+            {
+              "name": "@opam/base-bytes",
+              "version": [ "Opam", [ 0, 0, 0, "legacy" ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": []
+            },
+            {
+              "name": "@opam/ocamlfind",
+              "version": [ "Opam", [ 1, 7, 3, "1" ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": [
+                [ "@opam/conf-m4", [ "Opam", [ 1, 0, 0, null ] ] ]
+              ]
+            }
+          ],
+          [ [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ] ]
+        ]
+      ]
+    ],
+    [
+      "@opam/topkg",
+      [
+        [
+          [ "Opam", [ 0, 9, 1, null ] ],
+          [
+            {
+              "name": "@opam/ocamlbuild",
+              "version": [ "Opam", [ 0, 9, 3, null ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": []
+            },
+            {
+              "name": "@opam/result",
+              "version": [ "Opam", [ 1, 2, 0, null ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": []
+            }
+          ],
+          [ [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ] ]
+        ]
+      ]
+    ],
+    [
+      "@opam/cppo",
+      [
+        [
+          [ "Opam", [ 1, 6, 0, null ] ],
+          [
+            {
+              "name": "@opam/base-unix",
+              "version": [ "Opam", [ 0, 0, 0, "base" ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": []
+            },
+            {
+              "name": "@opam/ocamlfind",
+              "version": [ "Opam", [ 1, 7, 3, "1" ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": [
+                [ "@opam/conf-m4", [ "Opam", [ 1, 0, 0, null ] ] ]
+              ]
+            },
+            {
+              "name": "@opam/base-bytes",
+              "version": [ "Opam", [ 0, 0, 0, "legacy" ] ],
+              "archive": "",
+              "checksum": "",
+              "unpackedLocation": "",
+              "buildDeps": []
+            }
+          ],
+          [ [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ] ]
+        ]
+      ]
+    ]
+  ]
+}
