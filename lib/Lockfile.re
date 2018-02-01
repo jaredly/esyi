@@ -60,8 +60,8 @@
 [@deriving yojson]
 type realVersion = [
   | `Github(string)
-  | `Npm(Types.triple)
-  | `Opam(Types.triple)
+  | `Npm(VersionNumber.versionNumber)
+  | `Opam(VersionNumber.versionNumber)
   | `Git(string)
 ];
 

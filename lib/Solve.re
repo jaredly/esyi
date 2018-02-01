@@ -8,16 +8,16 @@ Printexc.record_backtrace(true);
 
 type realVersion = [
   | `Github(string)
-  | `Npm(Types.triple)
-  | `Opam(Types.triple)
+  | `Npm(VersionNumber.versionNumber)
+  | `Opam(VersionNumber.versionNumber)
   | `Git(string)
 ];
 
 let satisfies = (realVersion, req) => {
   switch (req, realVersion) {
   | (Types.Github(source), `Github(source_)) when source == source_ => true
-  | (Npm(semver), `Npm(s)) when NpmSemver.matches(s, semver) => true
-  | (Opam(semver), `Opam(s)) when NpmSemver.matches(s, semver) => true
+  | (Npm(semver), `Npm(s)) when Semver.matches(s, semver) => true
+  | (Opam(semver), `Opam(s)) when Semver.matches(s, semver) => true
   | _ => false
   }
 };
@@ -25,8 +25,8 @@ let satisfies = (realVersion, req) => {
 let sortRealVersions = (a, b) => {
   switch (a, b) {
   | (`Github(a), `Github(b)) => 0
-  | (`Npm(a), `Npm(b)) => Types.compareTriples(a, b)
-  | (`Opam(a), `Opam(b)) => Types.compareTriples(a, b)
+  | (`Npm(a), `Npm(b)) => VersionNumber.compareVersionNumbers(a, b)
+  | (`Opam(a), `Opam(b)) => VersionNumber.compareVersionNumbers(a, b)
   | _ => 0
   }
 };
@@ -35,16 +35,16 @@ type cache = {
   npmPackages: Hashtbl.t(string, Yojson.Basic.json),
   opamPackages: Hashtbl.t(string, OpamParserTypes.opamfile),
   allBuildDeps: Hashtbl.t(string, list((realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
-  availableNpmVersions: Hashtbl.t(string, list((Types.triple, Yojson.Basic.json))),
-  availableOpamVersions: Hashtbl.t(string, list((Types.triple, string))),
+  availableNpmVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, Yojson.Basic.json))),
+  availableOpamVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, string))),
   manifests: Hashtbl.t((string, realVersion), (config, list(Types.dep), list(Types.dep))),
 };
 
 let viewRealVersion = v => switch v {
 | `Github(s) => "github: " ++ s
 | `Git(s) => "git: " ++ s
-| `Npm(t) => "npm: " ++ Types.viewTriple(t)
-| `Opam(t) => "opam: " ++ Types.viewTriple(t)
+| `Npm(t) => "npm: " ++ VersionNumber.viewVersionNumber(t)
+| `Opam(t) => "opam: " ++ VersionNumber.viewVersionNumber(t)
 };
 
 let toRealVersion = versionPlus => switch versionPlus {
@@ -86,8 +86,8 @@ let matchesSource = (source, versionCache, package) => {
 };
 
 let viewSource = source => switch source {
-| Types.Npm(semver) => "npm: " ++ Types.viewSemver(semver)
-| Opam(semver) => "opam: " ++ Types.viewSemver(semver)
+| Types.Npm(semver) => "npm: " ++ Semver.viewSemver(semver)
+| Opam(semver) => "opam: " ++ Semver.viewSemver(semver)
 | Github(s) => "github: " ++ s
 | Git(s) => "git: " ++ s
 };
@@ -117,7 +117,7 @@ let getAvailableVersions = (cache, (name, source)) => {
     };
     let available = Hashtbl.find(cache.availableNpmVersions, name);
     available
-    |> List.filter(((version, json)) => NpmSemver.matches(version, semver))
+    |> List.filter(((version, json)) => Semver.matches(version, semver))
     |> List.map(((version, json)) => `Npm(version, json));
   }
 
@@ -127,7 +127,7 @@ let getAvailableVersions = (cache, (name, source)) => {
     };
     let available = Hashtbl.find(cache.availableOpamVersions, name);
     available
-    |> List.filter(((version, path)) => NpmSemver.matches(version, semver))
+    |> List.filter(((version, path)) => Semver.matches(version, semver))
     |> List.map(((version, path)) => `Opam(version, path));
   }
   | _ => []

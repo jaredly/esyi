@@ -22,9 +22,9 @@ let toDep = ((name, value)) => {
   };
 
   switch (getOpam(name)) {
-  | Some(name) => (name, Opam(NpmSemver.parseTriple(value)))
+  | Some(name) => (name, Opam(Semver.parseSemver(value)))
   | None => {
-    (name, switch (NpmSemver.parseTriple(value)) {
+    (name, switch (Semver.parseSemver(value)) {
     | exception Failure(message) => {
       if (isGithub(value)) {
         Github(value)

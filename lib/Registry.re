@@ -15,7 +15,7 @@ let getFromNpmRegistry = name => {
     }
     | `Assoc(items) => {
       List.map(
-        ((name, json)) => (NpmSemver.tripleNumber(name), json),
+        ((name, json)) => (VersionNumber.versionNumberNumber(name), json),
         items
       )
     }
@@ -42,7 +42,7 @@ let getFromOpamRegistry = fullName => {
         let semver = switch (String.split_on_char('.', entry)) {
         | [] | [_] => (0, 0, 0, None)
         | [_name, ...items] => {
-          try (NpmSemver.handleTripleParts(items)) {
+          try (VersionNumber.handleVersionNumberParts(items)) {
           | _ => {
             print_endline("Can't handle the version for " ++ name ++ ": " ++ entry);
             (0, 0, 0, Some(String.concat(".", items)))

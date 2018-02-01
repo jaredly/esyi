@@ -19,8 +19,8 @@ let opName = op => switch op {
 };
 
 let fromPrefix = (op, version) => switch op {
-  | `Eq => Types.Opam(Exactly(NpmSemver.tripleNumber(version)))
-  | `Geq => Types.Opam(AtLeast(NpmSemver.tripleNumber(version)))
+  | `Eq => Types.Opam(Exactly(VersionNumber.versionNumberNumber(version)))
+  | `Geq => Types.Opam(AtLeast(VersionNumber.versionNumberNumber(version)))
   | _ => {
     failwith("Unexpected prefix op for version " ++ opName(op) ++ " " ++ version)
   }
@@ -30,7 +30,7 @@ let withScope = name => "@opam/" ++ name;
 
 let toDep = opamvalue => {
   let (name, s) = switch opamvalue {
-  | String(_, name) => (name, Types.Opam(Types.Any))
+  | String(_, name) => (name, Types.Opam(Semver.Any))
   | Option(_, String(_, name), [Prefix_relop(_, op, String(_, version))]) => (name, fromPrefix(op, version))
   | Option(_, String(_, name), [y]) => {
     print_endline("Unexpected option " ++ name ++ " -- pretending its any " ++
