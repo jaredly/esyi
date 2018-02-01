@@ -76,6 +76,14 @@ type solvedDep = {
 }
 
 [@deriving yojson]
+and buildDep = {
+  bname: string,
+  version: realVersion,
+  solvedDeps: list(solvedDep),
+  buildDeps: list((string, realVersion))
+}
+
+[@deriving yojson]
 and lockfile = {
   requestedDeps: list(Types.dep),
   requestedBuildDeps: list(Types.dep),
@@ -86,7 +94,7 @@ and lockfile = {
   solvedDeps: list(solvedDep),
   solvedBuildDeps: list((string, realVersion)),
   /* A mapping of name:version to the solved dependencies, and the solved build deps */
-  allBuildDeps: list((string, list((realVersion, list(solvedDep), list((string, realVersion)))))),
+  allBuildDeps: list((string, list(buildDep))),
 };
 
 

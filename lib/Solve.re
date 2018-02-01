@@ -349,11 +349,12 @@ let solve = (config) => {
 
   let allBuildDeps = Hashtbl.fold(
     (key, items, res) => [(key,
-      items |> List.map(((realVersion, solvedDeps, buildDeps)) => (
-        realVersion,
-        List.map(addBuildDepsForSolvedDep(cache), solvedDeps),
-        List.map(resolveBuildDep(cache.allBuildDeps), buildDeps)
-      ))
+      items |> List.map(((realVersion, solvedDeps, buildDeps)) => {
+        Lockfile.bname: key,
+        version: realVersion,
+        solvedDeps: List.map(addBuildDepsForSolvedDep(cache), solvedDeps),
+        buildDeps: List.map(resolveBuildDep(cache.allBuildDeps), buildDeps)
+      })
     ), ...res],
     cache.allBuildDeps,
     []

@@ -432,37 +432,89 @@
     [
       "@opam/ocamlfind",
       [
-        [
-          [ "Opam", [ 1, 7, 3, "1" ] ],
-          [],
-          [ [ "@opam/conf-m4", [ "Opam", [ 1, 0, 0, null ] ] ] ]
-        ]
+        {
+          "bname": "@opam/ocamlfind",
+          "version": [ "Opam", [ 1, 7, 3, "1" ] ],
+          "solvedDeps": [],
+          "buildDeps": [ [ "@opam/conf-m4", [ "Opam", [ 1, 0, 0, null ] ] ] ]
+        }
       ]
     ],
-    [ "@opam/conf-m4", [ [ [ "Opam", [ 1, 0, 0, null ] ], [], [] ] ] ],
+    [
+      "@opam/conf-m4",
+      [
+        {
+          "bname": "@opam/conf-m4",
+          "version": [ "Opam", [ 1, 0, 0, null ] ],
+          "solvedDeps": [],
+          "buildDeps": []
+        }
+      ]
+    ],
     [
       "@opam/jbuilder",
       [
-        [
-          [ "Opam", [ 1, 0, 0, "beta16" ] ],
-          [],
-          [ [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ] ]
-        ]
+        {
+          "bname": "@opam/jbuilder",
+          "version": [ "Opam", [ 1, 0, 0, "beta16" ] ],
+          "solvedDeps": [],
+          "buildDeps": [
+            [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ]
+          ]
+        }
       ]
     ],
     [
       "@esy-ocaml/esy-installer",
-      [ [ [ "Npm", [ 0, 0, 0, null ] ], [], [] ] ]
+      [
+        {
+          "bname": "@esy-ocaml/esy-installer",
+          "version": [ "Npm", [ 0, 0, 0, null ] ],
+          "solvedDeps": [],
+          "buildDeps": []
+        }
+      ]
     ],
-    [ "@opam/conf-which", [ [ [ "Opam", [ 1, 0, 0, null ] ], [], [] ] ] ],
-    [ "@opam/ocamlbuild", [ [ [ "Opam", [ 0, 12, 0, null ] ], [], [] ] ] ],
-    [ "@opam/conf-perl", [ [ [ "Opam", [ 1, 0, 0, null ] ], [], [] ] ] ],
+    [
+      "@opam/conf-which",
+      [
+        {
+          "bname": "@opam/conf-which",
+          "version": [ "Opam", [ 1, 0, 0, null ] ],
+          "solvedDeps": [],
+          "buildDeps": []
+        }
+      ]
+    ],
+    [
+      "@opam/ocamlbuild",
+      [
+        {
+          "bname": "@opam/ocamlbuild",
+          "version": [ "Opam", [ 0, 12, 0, null ] ],
+          "solvedDeps": [],
+          "buildDeps": []
+        }
+      ]
+    ],
+    [
+      "@opam/conf-perl",
+      [
+        {
+          "bname": "@opam/conf-perl",
+          "version": [ "Opam", [ 1, 0, 0, null ] ],
+          "solvedDeps": [],
+          "buildDeps": []
+        }
+      ]
+    ],
     [
       "@opam/cppo_ocamlbuild",
       [
-        [
-          [ "Opam", [ 1, 6, 0, null ] ],
-          [
+        {
+          "bname": "@opam/cppo_ocamlbuild",
+          "version": [ "Opam", [ 1, 6, 0, null ] ],
+          "solvedDeps": [
             {
               "name": "@opam/ocamlbuild",
               "version": [ "Opam", [ 0, 9, 3, null ] ],
@@ -508,16 +560,19 @@
               ]
             }
           ],
-          [ [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ] ]
-        ]
+          "buildDeps": [
+            [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+          ]
+        }
       ]
     ],
     [
       "@opam/topkg",
       [
-        [
-          [ "Opam", [ 0, 9, 1, null ] ],
-          [
+        {
+          "bname": "@opam/topkg",
+          "version": [ "Opam", [ 0, 9, 1, null ] ],
+          "solvedDeps": [
             {
               "name": "@opam/ocamlbuild",
               "version": [ "Opam", [ 0, 9, 3, null ] ],
@@ -535,16 +590,19 @@
               "buildDeps": []
             }
           ],
-          [ [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ] ]
-        ]
+          "buildDeps": [
+            [ "@opam/ocamlfind", [ "Opam", [ 1, 7, 3, "1" ] ] ]
+          ]
+        }
       ]
     ],
     [
       "@opam/cppo",
       [
-        [
-          [ "Opam", [ 1, 6, 0, null ] ],
-          [
+        {
+          "bname": "@opam/cppo",
+          "version": [ "Opam", [ 1, 6, 0, null ] ],
+          "solvedDeps": [
             {
               "name": "@opam/base-unix",
               "version": [ "Opam", [ 0, 0, 0, "base" ] ],
@@ -572,8 +630,10 @@
               "buildDeps": []
             }
           ],
-          [ [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ] ]
-        ]
+          "buildDeps": [
+            [ "@opam/jbuilder", [ "Opam", [ 1, 0, 0, "beta16" ] ] ]
+          ]
+        }
       ]
     ]
   ]
