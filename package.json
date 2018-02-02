@@ -22,6 +22,7 @@
     "@opam/yojson": "*",
     "@opam/cudf": "0.9",
     "@opam/ocurl": "*",
+    "@opam/yaml": "*",
     "@opam/ppx_deriving_yojson": "*",
     "@opam/mccs": "*",
     "lwt-node": "*",

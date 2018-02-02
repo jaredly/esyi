@@ -1,17 +1,6 @@
 
 let (/+) = Filename.concat;
 
-/* let findOpamFile = (dir, name) => {
-  let name = OpamFile.withoutScope(name);
-  if (Files.exists(dir /+ "opam")) {
-    dir /+ "opam"
-  } else if (Files.exists(dir /+ name ++ ".opam")) {
-    dir /+ name ++ ".opam"
-  } else {
-    failwith("No opam file found in " ++ dir ++ " for " ++ name)
-  }
-}; */
-
 let consume = (fn, opt) => switch opt { | None => () | Some(x) => fn(x)};
 
 let unpackArchive = (basedir, cache, {Lockfile.name, version, opamFile}, archive) => {
@@ -45,17 +34,6 @@ let unpackArchive = (basedir, cache, {Lockfile.name, version, opamFile}, archive
     print_endline("Wrote package.json out " ++ dest /+ "package.json")
   }
   }
-
-  /* if (!Files.exists(dest /+ "package.json")) {
-    switch opamFile {
-    | None => failwith("No opam file or packge.json")
-    | Some(opamFile) => {
-      let packageJson = OpamFile.toPackageJson(opamFile, name);
-      Yojson.Basic.to_file(dest /+ "package.json", packageJson);
-      print_endline("Wrote package.json out " ++ dest /+ "package.json")
-    }
-    }
-  } */
 };
 
 let fetch = (basedir, lockfile) => {
@@ -73,7 +51,6 @@ let fetch = (basedir, lockfile) => {
     | [({archive} as dep, childDeps)] => {
         unpackArchive(basedir, cache, dep, archive);
         childDeps |> List.iter(({archive} as childDep) => {
-          /* print_endline(name ++ " -> " ++ childDep.name); */
           unpackArchive(basedir /+ "node_modules" /+ name, cache, childDep, archive)
         });
     }

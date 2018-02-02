@@ -1,6 +1,19 @@
 
 open OpamParserTypes;
 
+type opamManifest = {
+  fileName: string,
+  build: list(list(string)),
+  install: list(list(string)),
+  patches: list(string), /* these should be absolute */
+  files: list((string, string)), /* absname, relname */
+  deps: list((string, Semver.semver)),
+  buildDeps: list((string, Semver.semver)),
+  testDeps: list((string, Semver.semver)),
+};
+/* TODO parse an opam file into this manifest format */
+/* Then parse our fancy override json or yaml thing... I think? */
+
 let rec findVariable = (name, items) => switch items {
 | [] => None
 | [Variable(_, n, v), ..._] when n == name => Some(v)
