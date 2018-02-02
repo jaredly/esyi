@@ -3,4 +3,4 @@
 (library
  ((name lib)
   (preprocess (pps (ppx_deriving_yojson)))
-  (libraries (lambda-term lwt str curl cudf ppx_deriving_yojson.runtime mccs yojson opam-file-format))))
+  (libraries (lambda-term lwt str curl cudf yaml ppx_deriving_yojson.runtime mccs yojson opam-file-format))))
