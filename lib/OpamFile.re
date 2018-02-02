@@ -1,7 +1,7 @@
 
 open OpamParserTypes;
 
-type opamManifest = {
+type manifest = {
   fileName: string,
   build: list(list(string)),
   install: list(list(string)),
@@ -9,10 +9,13 @@ type opamManifest = {
   files: list((string, string)), /* absname, relname */
   deps: list((string, Semver.semver)),
   buildDeps: list((string, Semver.semver)),
-  testDeps: list((string, Semver.semver)),
+  devDeps: list((string, Semver.semver)),
+  source: option((string, option(string))),
 };
 /* TODO parse an opam file into this manifest format */
 /* Then parse our fancy override json or yaml thing... I think? */
+
+type thinManifest = (string, string);
 
 let rec findVariable = (name, items) => switch items {
 | [] => None
@@ -32,8 +35,8 @@ let opName = op => switch op {
 };
 
 let fromPrefix = (op, version) => switch op {
-  | `Eq => Types.Opam(Exactly(VersionNumber.versionNumberNumber(version)))
-  | `Geq => Types.Opam(AtLeast(VersionNumber.versionNumberNumber(version)))
+  | `Eq => Semver.Exactly(VersionNumber.versionNumberNumber(version))
+  | `Geq => AtLeast(VersionNumber.versionNumberNumber(version))
   | _ => {
     failwith("Unexpected prefix op for version " ++ opName(op) ++ " " ++ version)
   }
@@ -51,12 +54,12 @@ let withoutScope = fullName => {
 
 let toDep = opamvalue => {
   let (name, s) = switch opamvalue {
-  | String(_, name) => (name, Types.Opam(Semver.Any))
+  | String(_, name) => (name, Semver.Any)
   | Option(_, String(_, name), [Prefix_relop(_, op, String(_, version))]) => (name, fromPrefix(op, version))
   | Option(_, String(_, name), [y]) => {
     print_endline("Unexpected option " ++ name ++ " -- pretending its any " ++
     OpamPrinter.value(opamvalue));
-    (name, Types.Opam(Any))
+    (name, Any)
   }
   | _ => {
     failwith("Can't parse this opam dep " ++ OpamPrinter.value(opamvalue))
@@ -65,23 +68,8 @@ let toDep = opamvalue => {
   (withScope(name), s)
 };
 
-type thinManifest = (string, string);
-type manifest = (
-  OpamParserTypes.opamfile
-  ,
-  option(OpamParserTypes.opamfile)
-);
-
-let getManifest = ((opam, url)) => {
-  (
-    OpamParser.file(opam),
-    Files.exists(url) ? Some(OpamParser.file(url)) : None
-  )
-};
-
-let process = (({file_contents, file_name}, _)) => {
-  /* print_endline("processing" ++ file_name); */
-  let deps = switch (findVariable("depends", file_contents)) {
+let processDeps = deps => {
+  let deps = switch (deps) {
   | None => []
   | Some(List(_, items)) => items
   | Some(Group(_, items)) => items
@@ -139,62 +127,73 @@ let replaceVariables = string => {
   )
 };
 
-let toPackageJson = (filename, name, version) => {
-  let file = OpamParser.file(filename);
-  print_endline("opam file " ++ filename);
-  let (deps, buildDeps, devDeps) = process((file, ()));
-  let build = switch(findVariable("build", file.file_contents)) {
+let processCommandList = item => {
+  switch(item) {
+  | None => []
+  | Some(List(_, items))
+  | Some(Group(_, items)) => {
+
+    items |> filterMap(item => {
+      switch item {
+      | List(_, items) => {
+        let strings = items |> filterMap(item => {
+          switch item {
+          | String(_, name) => Some(replaceVariables(name))
+          | Ident(_, ident) => {
+            switch (List.assoc_opt(ident, variables)) {
+            | Some(string) => Some(string)
+            | None => {
+              print_endline("Missing vbl" ++ ident);
+              None
+            }
+            }
+          };
+          | _ => {
+            print_endline("Bad build arg " ++ OpamPrinter.value(item));
+            None
+          }
+          };
+        });
+        Some(strings)
+      }
+      | _ => {
+        print_endline("Skipping a non-list build thing " ++ OpamPrinter.value(item));
+        None
+      }
+      }
+    });
+  }
+
+  | Some(Ident(_, ident)) => {
+    switch (List.assoc_opt(ident, variables)) {
+    | Some(string) => [[string]]
+    | None => {
+      print_endline("Missing vbl" ++ ident);
+      []
+    }
+    }
+
+  }
+  | Some(item) => failwith("Unexpected type for a command list: " ++ OpamPrinter.value(item))
+  };
+};
+
+let processStringList = item => {
+  let items = switch(item) {
   | None => []
   | Some(List(_, items))
   | Some(Group(_, items)) => items
-  | _ => failwith("Bad opam build " ++ filename)
+  | Some(item) => failwith("Unexpected type for a string list: " ++ OpamPrinter.value(item))
   };
-  let build = build |> filterMap(item => {
+  items |> filterMap(item => {
     switch item {
-    | List(_, items) => {
-      let strings = items |> filterMap(item => {
-        switch item {
-        | String(_, name) => Some(`String(replaceVariables(name)))
-        | Ident(_, ident) => {
-          switch (List.assoc_opt(ident, variables)) {
-          | Some(string) => Some(`String(string))
-          | None => {
-            print_endline("Missing vbl" ++ ident);
-            None
-          }
-          }
-        };
-        | _ => {
-          print_endline("Bad build arg " ++ OpamPrinter.value(item));
-          None
-        }
-        };
-        /* | Ident(_, "make") => Some(`String("make"))
-        | Ident(_, ("bin" | "lib" | "man") as v) => `String("$cur__install/" ++ v)
-        } */
-      });
-      Some(`List(strings))
-    }
-    | _ => {
-      print_endline("Skipping a non-list build thing " ++ OpamPrinter.value(item));
-      None
-    }
+      | String(_, name) => Some(name)
+      | _ => {
+        print_endline("Bad string list item arg " ++ OpamPrinter.value(item));
+        None
+      }
     }
   });
-
-  `Assoc([
-    ("name", `String(name)),
-    ("version", `String(Lockfile.plainVersionNumber(version))),
-    ("esy", `Assoc([
-      ("build", `List(build)),
-      /* ("buildsInSource", "_build") */
-    ])),
-    ("dependencies", `Assoc(
-      (deps |> List.map(((name, _)) => (name, `String("*"))))
-      @
-      (buildDeps |> List.map(((name, _)) => (name, `String("*"))))
-    ))
-  ])
 };
 
 let findArchive = contents => {
@@ -213,18 +212,66 @@ let findArchive = contents => {
   }
 };
 
-let getArchive = ((_, url)) => {
-  switch url {
-  | None => (None, "no checksum")
-  | Some({file_contents, file_name}) => {
-    print_endline(file_name);
-    let archive = findArchive(file_contents);
-    switch (findVariable("checksum", file_contents)) {
-    | Some(String(_, checksum)) => (Some(archive), checksum)
-    | _ => failwith("Invalid url file - no checksum")
-    }
+let parseUrlFile = ({file_contents}) => {
+  let archive = findArchive(file_contents);
+  switch (findVariable("checksum", file_contents)) {
+  | Some(String(_, checksum)) => Some((archive, Some(checksum)))
+  | _ => Some((archive, None))
   }
+};
+
+let parseManifest = ({file_contents, file_name}) => {
+  let baseDir = Filename.dirname(file_name);
+  let (deps, buildDeps, devDeps) = processDeps(findVariable("depends", file_contents));
+  {
+    fileName: file_name,
+    build: processCommandList(findVariable("build", file_contents)),
+    install: processCommandList(findVariable("install", file_contents)),
+    patches: processStringList(findVariable("patches", file_contents)) |> List.map(Filename.concat(baseDir)),
+    files: processStringList(findVariable("files", file_contents)) |> List.map(m => (Filename.concat(baseDir, m), m)),
+    deps,
+    buildDeps,
+    devDeps,
+    source: None,
+  };
+};
+
+let getManifest = ((opam, url)) => {
+  {
+    ...parseManifest(OpamParser.file(opam)),
+    source: Files.exists(url) ? parseUrlFile(OpamParser.file(url)) : None
   }
+};
+
+let getArchive = ({source}) => source;
+
+let toDepSource = ((name, semver)) => (name, Types.Opam(semver));
+
+let process = ({deps, buildDeps, devDeps}) => {
+  (deps |> List.map(toDepSource), buildDeps |> List.map(toDepSource), devDeps |> List.map(toDepSource))
+};
+
+let commandListToJson = e => e |> List.map(items => `List(List.map(item => `String(item), items)));
+
+let toPackageJson = (filename, name, version) => {
+  let file = OpamParser.file(filename);
+  print_endline("opam file " ++ filename);
+  let manifest = parseManifest(file);
+
+  `Assoc([
+    ("name", `String(name)),
+    ("version", `String(Lockfile.plainVersionNumber(version))),
+    ("esy", `Assoc([
+      ("build", `List(commandListToJson(manifest.build))),
+      ("install", `List(commandListToJson(manifest.install))),
+      /* ("buildsInSource", "_build") */
+    ])),
+    ("dependencies", `Assoc(
+      (manifest.deps |> List.map(((name, _)) => (name, `String("*"))))
+      @
+      (manifest.buildDeps |> List.map(((name, _)) => (name, `String("*"))))
+    ))
+  ])
 };
 
 /* let process = (parsed: OpamParserTypes.opamfile) => switch parsed {

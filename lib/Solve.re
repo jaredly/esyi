@@ -186,7 +186,7 @@ let makeRequest = (deps, state) => {
  let getOpamFile = manifest => {
    switch manifest {
    | `PackageJson(_) => None
-   | `OpamFile(({OpamParserTypes.file_name}, _)) => Some(file_name)
+   | `OpamFile({OpamFile.fileName}) => Some(fileName)
    }
  };
 
@@ -241,12 +241,10 @@ let rec solveDeps = (cache, deps) => {
         let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(state.cache.manifests, (p.Cudf.package, version))) {
         | Not_found => failwith("BAD NEWS no manifest for you")
         };
-        let (archive, checksum) = Manifest.getArchive(manifest);
         ([{
           Lockfile.name: p.Cudf.package,
           version: version,
-          archive,
-          checksum,
+          source: Manifest.getArchive(manifest),
           opamFile: getOpamFile(manifest),
           unpackedLocation: "",
           buildDeps: [],
@@ -347,11 +345,9 @@ let solve = (config) => {
         let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(cache.manifests, (key, realVersion))) {
         | Not_found => failwith("BAD NEWS no manifest for you")
         };
-        let (archive, checksum) = Manifest.getArchive(manifest);
         ({
         Lockfile.name: key,
-        archive,
-        checksum,
+        source: Manifest.getArchive(manifest),
         opamFile: getOpamFile(manifest),
         version: realVersion,
         unpackedLocation: "",

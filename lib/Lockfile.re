@@ -69,8 +69,7 @@ type realVersion = [
 type solvedDep = {
   name: string,
   version: realVersion,
-  archive: option(string), /* git+some.git or some.zip or some.tgz */
-  checksum: string,
+  source: option((string, option(string))),
   opamFile: option(string),
   unpackedLocation: string,
   buildDeps: list((string, realVersion)),

@@ -3,11 +3,11 @@ let (/+) = Filename.concat;
 
 let consume = (fn, opt) => switch opt { | None => () | Some(x) => fn(x)};
 
-let unpackArchive = (basedir, cache, {Lockfile.name, version, opamFile}, archive) => {
+let unpackArchive = (basedir, cache, {Lockfile.name, version, opamFile}, source) => {
   let dest = basedir /+ "node_modules" /+ name;
   Files.mkdirp(dest);
 
-  archive |> consume(url => {
+  source |> consume(((url, _checksum)) => {
     let safe = Str.global_replace(Str.regexp("/"), "-", name);
     let withVersion = safe ++ Lockfile.viewRealVersion(version);
     let tarball = cache /+ withVersion ++ ".tarball";
@@ -42,16 +42,16 @@ let fetch = (basedir, lockfile) => {
 
   open Lockfile;
 
-  lockfile.solvedDeps |> List.iter(({archive} as dep) => {
-    unpackArchive(basedir, cache, dep, archive);
+  lockfile.solvedDeps |> List.iter(({source} as dep) => {
+    unpackArchive(basedir, cache, dep, source);
   });
 
   lockfile.allBuildDeps |> List.iter(((name, versions)) => {
     switch versions {
-    | [({archive} as dep, childDeps)] => {
-        unpackArchive(basedir, cache, dep, archive);
-        childDeps |> List.iter(({archive} as childDep) => {
-          unpackArchive(basedir /+ "node_modules" /+ name, cache, childDep, archive)
+    | [({source} as dep, childDeps)] => {
+        unpackArchive(basedir, cache, dep, source);
+        childDeps |> List.iter(({source} as childDep) => {
+          unpackArchive(basedir /+ "node_modules" /+ name, cache, childDep, source)
         });
     }
     | _ => failwith("Can't handle multiple versions just yet")
