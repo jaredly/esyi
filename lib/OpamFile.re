@@ -6,7 +6,7 @@ type manifest = {
   build: list(list(string)),
   install: list(list(string)),
   patches: list(string), /* these should be absolute */
-  files: list((string, string)), /* absname, relname */
+  files: list((string, string)), /* relname, sourcetext */
   deps: list((string, Semver.semver)),
   buildDeps: list((string, Semver.semver)),
   devDeps: list((string, Semver.semver)),
@@ -224,6 +224,8 @@ let parseUrlFile = ({file_contents}) => {
   }
 };
 
+let unwrap = (message, x) => switch x { | Some(x) => x | None => failwith(message)};
+
 let parseManifest = ({file_contents, file_name}) => {
   let baseDir = Filename.dirname(file_name);
   let (deps, buildDeps, devDeps) = processDeps(findVariable("depends", file_contents));
@@ -232,7 +234,7 @@ let parseManifest = ({file_contents, file_name}) => {
     build: processCommandList(findVariable("build", file_contents)),
     install: processCommandList(findVariable("install", file_contents)),
     patches: processStringList(findVariable("patches", file_contents)) |> List.map(Filename.concat(baseDir)),
-    files: processStringList(findVariable("files", file_contents)) |> List.map(m => (Filename.concat(baseDir, m), m)),
+    files: processStringList(findVariable("files", file_contents)) |> List.map(m => (m, Files.readFile(Filename.concat(baseDir, m)) |> unwrap("missing file"))),
     deps,
     buildDeps,
     devDeps,
