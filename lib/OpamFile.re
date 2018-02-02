@@ -34,11 +34,15 @@ let opName = op => switch op {
   | `Gt => ">"
 };
 
-let fromPrefix = (op, version) => switch op {
-  | `Eq => Semver.Exactly(VersionNumber.versionNumberNumber(version))
-  | `Geq => AtLeast(VersionNumber.versionNumberNumber(version))
-  | _ => {
-    failwith("Unexpected prefix op for version " ++ opName(op) ++ " " ++ version)
+let fromPrefix = (op, version) => {
+  let v = VersionNumber.versionNumberNumber(version);
+  switch op {
+  | `Eq => Semver.Exactly(v)
+  | `Geq => AtLeast(v)
+  | `Leq => AtMost(v)
+  | `Lt => LessThan(v)
+  | `Gt => GreaterThan(v)
+  | `Neq => failwith("Unexpected prefix op for version " ++ opName(op) ++ " " ++ version)
   }
 };
 

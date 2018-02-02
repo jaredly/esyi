@@ -6,9 +6,9 @@ type semver =
   | Any
   | Exactly(versionNumber)
   | AtLeast(versionNumber)
-  /* | GreaterThan(versionNumber)
+  | GreaterThan(versionNumber)
   | AtMost(versionNumber)
-  | LessThan(versionNumber) */
+  | LessThan(versionNumber)
   | UpToMinor(versionNumber)
   | UpToMajor(versionNumber);
 
@@ -19,6 +19,10 @@ let matches = ((major, minor, patch, extra), semver) => {
   | UpToMinor((m, i, p, e)) => m == major && i == minor && ((p == patch && e == extra) || p <= patch)
   | UpToMajor((m, i, p, e)) => m == major && ((i == minor && p == patch && e == extra) || i <= minor)
   | AtLeast((m, i, p, e)) => compareVersionNumbers((m, i, p, e), (major, minor, patch, extra)) <= 0
+
+  | GreaterThan((m, i, p, e)) => compareVersionNumbers((m, i, p, e), (major, minor, patch, extra)) < 0
+  | LessThan((m, i, p, e)) => compareVersionNumbers((m, i, p, e), (major, minor, patch, extra)) > 0
+  | AtMost((m, i, p, e)) => compareVersionNumbers((m, i, p, e), (major, minor, patch, extra)) >= 0
   }
 };
 
@@ -28,6 +32,9 @@ let viewSemver = semver => switch  semver {
   | UpToMajor(t) => "^" ++ VersionNumber.viewVersionNumber(t)
   | UpToMinor(t) => "~" ++ VersionNumber.viewVersionNumber(t)
   | AtLeast(t) => ">=" ++ VersionNumber.viewVersionNumber(t)
+  | GreaterThan(t) => ">" ++ VersionNumber.viewVersionNumber(t)
+  | AtMost(t) => "<=" ++ VersionNumber.viewVersionNumber(t)
+  | LessThan(t) => "<" ++ VersionNumber.viewVersionNumber(t)
 };
 
 let parseSemver = value => {
