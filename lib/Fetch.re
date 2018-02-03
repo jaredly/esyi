@@ -3,7 +3,7 @@ let (/+) = Filename.concat;
 
 let consume = (fn, opt) => switch opt { | None => () | Some(x) => fn(x)};
 
-let unpackArchive = (basedir, cache, {Lockfile.name, version, opamFile}, source) => {
+let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opamFile}, source) => {
   let dest = basedir /+ "node_modules" /+ name;
   Files.mkdirp(dest);
 
@@ -29,29 +29,30 @@ let unpackArchive = (basedir, cache, {Lockfile.name, version, opamFile}, source)
     if (Files.exists(dest /+ "esy.json")) {
       Unix.unlink(dest  /+ "esy.json");
     };
-    let packageJson = OpamFile.toPackageJson(opamFile, name, version);
+    let packageJson = OpamFile.toPackageJson(opamOverrides, opamFile, name, version);
     Yojson.Basic.to_file(dest /+ "package.json", packageJson);
     print_endline("Wrote package.json out " ++ dest /+ "package.json")
   }
   }
 };
 
-let fetch = (basedir, lockfile) => {
+let fetch = (config, basedir, lockfile) => {
+  let opamOverrides = OpamOverrides.getOverrides(config.Types.esyOpamOverrides);
   let cache = basedir /+ ".esy-cache" /+ "archives";
   Files.mkdirp(cache);
 
   open Lockfile;
 
   lockfile.solvedDeps |> List.iter(({source} as dep) => {
-    unpackArchive(basedir, cache, dep, source);
+    unpackArchive(opamOverrides, basedir, cache, dep, source);
   });
 
   lockfile.allBuildDeps |> List.iter(((name, versions)) => {
     switch versions {
     | [({source} as dep, childDeps)] => {
-        unpackArchive(basedir, cache, dep, source);
+        unpackArchive(opamOverrides, basedir, cache, dep, source);
         childDeps |> List.iter(({source} as childDep) => {
-          unpackArchive(basedir /+ "node_modules" /+ name, cache, childDep, source)
+          unpackArchive(opamOverrides, basedir /+ "node_modules" /+ name, cache, childDep, source)
         });
     }
     | _ => failwith("Can't handle multiple versions just yet")

@@ -1,5 +1,5 @@
 
-type config = [
+type manifest = [
   | `OpamFile(OpamFile.manifest)
   | `PackageJson(Yojson.Basic.json)
 ];
@@ -32,12 +32,14 @@ let sortRealVersions = (a, b) => {
 };
 
 type cache = {
+  config: Types.config,
+  opamOverrides: list((string, Semver.semver, string)),
   npmPackages: Hashtbl.t(string, Yojson.Basic.json),
   opamPackages: Hashtbl.t(string, OpamFile.manifest),
   allBuildDeps: Hashtbl.t(string, list((realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
   availableNpmVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, Yojson.Basic.json))),
   availableOpamVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, OpamFile.thinManifest))),
-  manifests: Hashtbl.t((string, realVersion), (config, list(Types.dep), list(Types.dep))),
+  manifests: Hashtbl.t((string, realVersion), (manifest, list(Types.dep), list(Types.dep))),
 };
 
 let toRealVersion = versionPlus => switch versionPlus {
@@ -119,14 +121,14 @@ let getAvailableVersions = (cache, (name, source)) => {
   }
 };
 
-let getCachedManifest = (cache, (name, versionPlus)) => {
+let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
   let realVersion = toRealVersion(versionPlus);
   switch (Hashtbl.find(cache, (name, realVersion))) {
   | exception Not_found => {
     let manifest = switch versionPlus {
     | `Github(url) => Registry.getGithubManifest(url)
     | `Npm(version, json) => `PackageJson(json)
-    | `Opam(version, path) => `OpamFile(OpamFile.getManifest(path))
+    | `Opam(version, path) => `OpamFile(OpamFile.getManifest(opamOverrides, path))
     };
     let (deps, buildDeps) = Manifest.getDeps(manifest);
     let res = (manifest, deps, buildDeps);
@@ -157,7 +159,7 @@ and addToUniverse = (state, (name, source)) => {
   getAvailableVersions(state.cache, (name, source)) |> List.iter(versionPlus => {
     let realVersion = toRealVersion(versionPlus);
     if (!Hashtbl.mem(state.lookupIntVersion, (name, realVersion))) {
-      let (manifest, deps, buildDeps) = getCachedManifest(state.cache.manifests, (name, versionPlus));
+      let (manifest, deps, buildDeps) = getCachedManifest(state.cache.opamOverrides, state.cache.manifests, (name, versionPlus));
       addPackage(name, realVersion, deps, buildDeps, state, manifest)
     }
   });
@@ -274,7 +276,7 @@ and processBuildDeps = (cache, deps) => {
   print_endline("Chose these dev deps");
   let allBuildDeps = toInstall |> List.map(((name, versionPlus)) => {
     print_endline(name ++ ": " ++ Lockfile.viewRealVersion(toRealVersion(versionPlus)));
-    let (manifest, deps, buildDeps) = getCachedManifest(cache.manifests, (name, versionPlus));
+    let (manifest, deps, buildDeps) = getCachedManifest(cache.opamOverrides, cache.manifests, (name, versionPlus));
     let (solvedDeps, collectedBuildDeps) = solveDeps(cache, deps);
 
     let current = switch (Hashtbl.find(cache.allBuildDeps, name)) {
@@ -318,8 +320,10 @@ let addBuildDepsForSolvedDep = (cache, solvedDep) => {
   }
 };
 
-let solve = (config) => {
+let solve = (config, manifest) => {
   let cache = {
+    config,
+    opamOverrides: OpamOverrides.getOverrides(config.Types.esyOpamOverrides),
     npmPackages: Hashtbl.create(100),
     opamPackages: Hashtbl.create(100),
     allBuildDeps: Hashtbl.create(100),
@@ -328,7 +332,7 @@ let solve = (config) => {
     manifests: Hashtbl.create(100),
   };
 
-  let (deps, buildDeps, devDeps) = switch config {
+  let (deps, buildDeps, devDeps) = switch manifest {
   | `OpamFile(file) => OpamFile.process(file)
   | `PackageJson(json) => PackageJson.process(json)
   };

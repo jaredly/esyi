@@ -1,5 +1,6 @@
 
 open OpamParserTypes;
+open OpamOverrides.Infix;
 
 type manifest = {
   fileName: string,
@@ -7,23 +8,22 @@ type manifest = {
   install: list(list(string)),
   patches: list(string), /* these should be absolute */
   files: list((string, string)), /* relname, sourcetext */
-  deps: list((string, Semver.semver)),
-  buildDeps: list((string, Semver.semver)),
-  devDeps: list((string, Semver.semver)),
+  deps: list(Types.dep),
+  buildDeps: list(Types.dep),
+  devDeps: list(Types.dep),
+  peerDeps: list(Types.dep),
   source: option((string, option(string))),
 };
 /* TODO parse an opam file into this manifest format */
 /* Then parse our fancy override json or yaml thing... I think? */
 
-type thinManifest = (string, string);
+type thinManifest = (string, string, string, VersionNumber.versionNumber);
 
 let rec findVariable = (name, items) => switch items {
 | [] => None
 | [Variable(_, n, v), ..._] when n == name => Some(v)
 | [_, ...rest] => findVariable(name, rest)
 };
-
-let (|?) = (a, b) => switch a { | None => b | Some(a) => a };
 
 let opName = op => switch op {
   | `Leq => "<="
@@ -224,7 +224,7 @@ let parseUrlFile = ({file_contents}) => {
   }
 };
 
-let unwrap = (message, x) => switch x { | Some(x) => x | None => failwith(message)};
+let toDepSource = ((name, semver)) => (name, Types.Opam(semver));
 
 let parseManifest = ({file_contents, file_name}) => {
   let baseDir = Filename.dirname(file_name);
@@ -234,35 +234,87 @@ let parseManifest = ({file_contents, file_name}) => {
     build: processCommandList(findVariable("build", file_contents)),
     install: processCommandList(findVariable("install", file_contents)),
     patches: processStringList(findVariable("patches", file_contents)) |> List.map(Filename.concat(baseDir)),
-    files: processStringList(findVariable("files", file_contents)) |> List.map(m => (m, Files.readFile(Filename.concat(baseDir, m)) |> unwrap("missing file"))),
-    deps,
-    buildDeps,
-    devDeps,
+    files: processStringList(findVariable("files", file_contents)) |> List.map(m => (m, Files.readFile(Filename.concat(baseDir, m)) |! "missing file")),
+    deps: deps |> List.map(toDepSource),
+    buildDeps: buildDeps |> List.map(toDepSource),
+    devDeps: devDeps |> List.map(toDepSource),
+    peerDeps: [], /* TODO peer deps */
     source: None,
   };
 };
 
-let getManifest = ((opam, url)) => {
+let parseDepVersion = ((name, version)) => {
+  PackageJson.parseNpmSource((name, version))
+  /* (name, PackageJson.parseNpmSource(version)) */
+};
+
+module StrSet = Set.Make(String);
+let assignAssoc = (target, override) => {
+  let replacing = List.fold_left(
+    ((set, (name, _)) => StrSet.add(name, set)),
+    StrSet.empty,
+    override
+  );
+  List.filter(((name, _)) => !StrSet.mem(name, replacing), target) @ override
+};
+
+module O = OpamOverrides;
+let mergeOverride = (manifest, override) => {
+  let source = override.O.opam |?> (opam => switch opam.O.url {
+    | Some(url) => Some((url, opam.O.checksum))
+    | None => None
+    }) |?? manifest.source;
+     /* |? manifest.source; */
   {
+    ...manifest,
+    build: override.O.build |? manifest.build,
+    install: override.O.install |? manifest.install,
+    deps: assignAssoc(manifest.deps, override.O.dependencies |> List.map(parseDepVersion)),
+    peerDeps: assignAssoc(manifest.peerDeps, override.O.peerDependencies |> List.map(parseDepVersion)),
+    files: manifest.files @ (override.O.opam |?>> (o => o.O.files) |? []),
+    source: source
+  }
+};
+
+let getManifest = (opamOverrides, (opam, url, name, version)) => {
+  let manifest = {
     ...parseManifest(OpamParser.file(opam)),
     source: Files.exists(url) ? parseUrlFile(OpamParser.file(url)) : None
+  };
+  switch (OpamOverrides.findApplicableOverride(opamOverrides, name, version)) {
+  | None => {
+    print_endline("No override for " ++ name ++ " " ++ VersionNumber.viewVersionNumber(version));
+    manifest
+  }
+  | Some(override) => {
+    print_endline("!! Found override for " ++ name);
+    switch (override.O.build) {
+    | Some(x) => print_endline("Got a build@")
+    | None => print_endline("no build")
+    };
+    let m = mergeOverride(manifest, override);
+    print_endline(String.concat("\n", List.map(x => String.concat(" -- ", x), m.build)));
+    m
+  }
   }
 };
 
 let getArchive = ({source}) => source;
 
-let toDepSource = ((name, semver)) => (name, Types.Opam(semver));
-
 let process = ({deps, buildDeps, devDeps}) => {
-  (deps |> List.map(toDepSource), buildDeps |> List.map(toDepSource), devDeps |> List.map(toDepSource))
+  (deps, buildDeps, devDeps)
 };
 
 let commandListToJson = e => e |> List.map(items => `List(List.map(item => `String(item), items)));
 
-let toPackageJson = (filename, name, version) => {
-  let file = OpamParser.file(filename);
+let toPackageJson = (opamOverrides, filename, name, version) => {
+  /* let file = OpamParser.file(filename); */
   print_endline("opam file " ++ filename);
-  let manifest = parseManifest(file);
+  /* let manifest = parseManifest(file); */
+  let manifest = getManifest(opamOverrides, (filename, "", withoutScope(name), switch version {
+  | `Opam(t) => t
+  | _ => failwith("unexpected opam version")
+  }));
 
   `Assoc([
     ("name", `String(name)),

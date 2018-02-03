@@ -24,15 +24,19 @@ let rec yamlToJson = value => switch value {
 | `A(items) => `List(List.map(yamlToJson, items))
 | `O(items) => `Assoc(List.map(((name, value)) => (name, yamlToJson(value)), items))
 | `String(s) => `String(s)
-| `Float(s) => `Number(s)
+| `Float(s) => `Float(s)
 | `Bool(b) => `Bool(b)
 | `Null => `Null
 };
 
-let (|?>) = (a, b) => switch a { | None => None | Some(x) => b(x) };
-let (|?>>) = (a, b) => switch a { | None => None | Some(x) => Some(b(x)) };
-let (|?) = (a, b) => switch a { | None => b | Some(a) => a };
-let (|!) = (a, b) => switch a { | None => failwith(b) | Some(a) => a };
+module Infix = {
+  let (|?>) = (a, b) => switch a { | None => None | Some(x) => b(x) };
+  let (|?>>) = (a, b) => switch a { | None => None | Some(x) => Some(b(x)) };
+  let (|?) = (a, b) => switch a { | None => b | Some(a) => a };
+  let (|??) = (a, b) => switch a { | None => b | Some(a) => Some(a) };
+  let (|!) = (a, b) => switch a { | None => failwith(b) | Some(a) => a };
+};
+open Infix;
 
 let module ProcessJson = {
 
@@ -68,7 +72,11 @@ let module ProcessJson = {
 
   let parseCommandList = json => json
     |> (arr |.! "should be a list")
-    |> List.map(items => items |> (arr |.! "should be nested list") |> List.map(str |.! "command list item should be a string"));
+    |> List.map(items => items |> (fun
+    | `String(s) => [`String(s)]
+    | `List(s) => s
+    | _ => failwith("must be a string or list of strings")
+    ) |> List.map(str |.! "command list item should be a string"));
 
   let parseDependencies = json => json
     |> (obj |.! "dependencies should be an object")
@@ -175,8 +183,20 @@ let tee = (fn, value) => if (fn(value)) { Some(value) } else { None };
 
 let getContents = baseDir => {
   switch (tee(Files.isFile, Filename.concat(baseDir, "package.json"))) {
-  | Some(name) => ProcessJson.process(Yojson.Basic.from_file(name))
-  | None => Filename.concat(baseDir, "package.yaml") |> tee(Files.isFile) |! "must have either package.json or package.yaml" |> name => ProcessJson.process(Yaml.of_string(name) |> expectResult("Bad yaml file") |> yamlToJson)
+  | Some(name) => try (ProcessJson.process(Yojson.Basic.from_file(name))) {
+  | Failure(message) => failwith("Bad json " ++ baseDir ++ " " ++ message)
+  }
+  | None =>
+    switch (Filename.concat(baseDir, "package.yaml") |> tee(Files.isFile)) {
+    | None => failwith("must have either package.json or package.yaml " ++ baseDir)
+    | Some(name) => {
+      let json = Yaml.of_string(Files.readFile(name) |! "unable to read yaml") |> expectResult("Bad yaml file") |> yamlToJson;
+      print_endline(Yojson.Basic.to_string(json));
+      try(ProcessJson.process(json)) {
+      | Failure(message) => failwith("Bad yaml jsom " ++ baseDir ++ " " ++ message)
+      }
+    }
+    }
   }
 };
 
@@ -184,6 +204,14 @@ let getOverrides = (checkoutDir) => {
   let dir = Filename.concat(checkoutDir, "packages");
   Files.readDirectory(dir) |> List.map(name => {
     let (realName, semver) = ParseName.parseDirectoryName(name);
-    (realName, semver, Filename.concat(checkoutDir, name))
+    (realName, semver, Filename.concat(dir, name))
   })
+};
+
+let findApplicableOverride = (overrides, name, version) => {
+  let rec loop = fun
+  | [] => None
+  | [(oname, semver, fullPath), ..._] when name == oname && Semver.matches(version, semver) => Some(getContents(fullPath))
+  | [_, ...rest] => loop(rest);
+  loop(overrides)
 };

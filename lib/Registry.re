@@ -47,8 +47,12 @@ let getFromOpamRegistry = fullName => {
         }
         };
         (semver,
-        (base /+ entry /+ "opam",
-        base /+ entry /+ "url")
+        (
+          base /+ entry /+ "opam",
+          base /+ entry /+ "url",
+          name,
+          semver
+        )
         )
       },
       entries

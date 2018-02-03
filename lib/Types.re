@@ -16,3 +16,7 @@ let viewReq = req => switch req {
 | Npm(t) => "npm: " ++ Semver.viewSemver(t)
 | Opam(t) => "opam: " ++ Semver.viewSemver(t)
 };
+
+type config = {
+  esyOpamOverrides: string,
+};

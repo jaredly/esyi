@@ -15,12 +15,7 @@ let isGithub = value => {
   Str.string_match(Str.regexp("[a-zA-Z0-9-]+/[a-zA-Z0-9_-]+(#.+)?"), value, 0)
 };
 
-let toDep = ((name, value)) => {
-  let value = switch value {
-  | `String(value) => value
-  | _ => failwith("Unexpected dep value: " ++ Yojson.Basic.to_string(value))
-  };
-
+let parseNpmSource = ((name, value)) => {
   switch (getOpam(name)) {
   | Some(name) => (name, Opam(Semver.parseSemver(value)))
   | None => {
@@ -36,6 +31,15 @@ let toDep = ((name, value)) => {
     })
   }
   }
+};
+
+let toDep = ((name, value)) => {
+  let value = switch value {
+  | `String(value) => value
+  | _ => failwith("Unexpected dep value: " ++ Yojson.Basic.to_string(value))
+  };
+
+  parseNpmSource((name, value))
 };
 
 /**

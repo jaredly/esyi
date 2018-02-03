@@ -1,10 +1,11 @@
 
-
 let (/+) = Filename.concat;
 
 let solve = (basedir) => {
   let json = Yojson.Basic.from_file(basedir /+ "package.json");
-  let lockfile = Solve.solve(`PackageJson(json));
+  let lockfile = Solve.solve({
+    Types.esyOpamOverrides: "/Users/jared/.esy/esy-opam-override"
+  }, `PackageJson(json));
   let json = Lockfile.lockfile_to_yojson(lockfile);
   let chan = open_out(basedir /+ "esyi.lock.json");
   Yojson.Safe.pretty_to_channel(chan, json);
@@ -17,6 +18,7 @@ let fetch = (basedir) => {
   | Error(a) => failwith("Bad lockfile")
   | Ok(a) => a
   };
-  Fetch.fetch(basedir, lockfile);
-
+  Fetch.fetch({
+    Types.esyOpamOverrides: "/Users/jared/.esy/esy-opam-override"
+  }, basedir, lockfile);
 };
