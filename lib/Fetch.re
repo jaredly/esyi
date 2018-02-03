@@ -30,7 +30,9 @@ let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opa
       Unix.unlink(dest  /+ "esy.json");
     };
     let packageJson = OpamFile.toPackageJson(opamOverrides, opamFile, name, version);
-    Yojson.Basic.to_file(dest /+ "package.json", packageJson);
+    let raw = Yojson.Basic.pretty_to_string(packageJson);
+    Files.writeFile(dest /+ "package.json", raw) |> ignore;
+    /* Yojson.Basic.to_file(dest /+ "package.json", packageJson); */
     print_endline("Wrote package.json out " ++ dest /+ "package.json")
   }
   }

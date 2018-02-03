@@ -13,6 +13,7 @@ type manifest = {
   devDeps: list(Types.dep),
   peerDeps: list(Types.dep),
   source: option((string, option(string))),
+  exportedEnv: list((string, (string, string))),
 };
 /* TODO parse an opam file into this manifest format */
 /* Then parse our fancy override json or yaml thing... I think? */
@@ -235,11 +236,16 @@ let parseManifest = ({file_contents, file_name}) => {
     install: processCommandList(findVariable("install", file_contents)),
     patches: processStringList(findVariable("patches", file_contents)) |> List.map(Filename.concat(baseDir)),
     files: processStringList(findVariable("files", file_contents)) |> List.map(m => (m, Files.readFile(Filename.concat(baseDir, m)) |! "missing file")),
-    deps: deps |> List.map(toDepSource),
+    deps: (deps |> List.map(toDepSource)) @ [
+      /* HACK? Not sure where/when this should be specified */
+      ("@esy-ocaml/substs", Npm(Semver.Any)),
+      ("@esy-ocaml/esy-installer", Npm(Semver.Any))
+    ],
     buildDeps: buildDeps |> List.map(toDepSource),
     devDeps: devDeps |> List.map(toDepSource),
     peerDeps: [], /* TODO peer deps */
     source: None,
+    exportedEnv: [],
   };
 };
 
@@ -272,7 +278,8 @@ let mergeOverride = (manifest, override) => {
     deps: assignAssoc(manifest.deps, override.O.dependencies |> List.map(parseDepVersion)),
     peerDeps: assignAssoc(manifest.peerDeps, override.O.peerDependencies |> List.map(parseDepVersion)),
     files: manifest.files @ (override.O.opam |?>> (o => o.O.files) |? []),
-    source: source
+    source: source,
+    exportedEnv: override.O.exportedEnv
   }
 };
 
@@ -322,7 +329,20 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
     ("esy", `Assoc([
       ("build", `List(commandListToJson(manifest.build))),
       ("install", `List(commandListToJson(manifest.install))),
+      ("exportedEnv", `Assoc(
+        manifest.exportedEnv
+        |> List.map(((name, (val_, scope))) => (
+          name,
+          `Assoc([
+            ("val", `String(val_)),
+            ("scope", `String(scope))
+          ])
+        ))
+      ))
       /* ("buildsInSource", "_build") */
+    ])),
+    ("peerDependencies", `Assoc([
+      ("ocaml", `String("*")) /* HACK probably get this somewhere */
     ])),
     ("dependencies", `Assoc(
       (manifest.deps |> List.map(((name, _)) => (name, `String("*"))))
