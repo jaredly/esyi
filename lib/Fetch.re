@@ -33,7 +33,7 @@ let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opa
     ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
   });
 
-  print_endline("Checking " ++ dest /+ "package.json");
+  /* print_endline("Checking " ++ dest /+ "package.json"); */
   let packageJson = dest /+ "package.json";
   switch opamFile {
   | None => {
@@ -62,7 +62,7 @@ let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opa
     });
 
     /* Yojson.Basic.to_file(dest /+ "package.json", packageJson); */
-    print_endline("Wrote package.json out " ++ dest /+ "package.json")
+    /* print_endline("Wrote package.json out " ++ dest /+ "package.json") */
   }
   }
 };

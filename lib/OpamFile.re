@@ -131,15 +131,17 @@ let filterMap = (fn, items) => {
 };
 
 /** TODO handle more variables */
-let variables = [
+let variables = ((name, version)) => [
   ("jobs", "4"),
   ("make", "make"),
   ("bin", "$cur__install/bin"),
   ("lib", "$cur__install/lib"),
   ("man", "$cur__install/man"),
+  ("name", name),
+  ("prefix", "$cur__install"),
 ];
 
-let replaceVariables = string => {
+let replaceVariables = (info, string) => {
   List.fold_left(
     (string, (name, res)) => {
       Str.global_replace(
@@ -149,63 +151,50 @@ let replaceVariables = string => {
       )
     },
     string,
-    variables
+    variables(info)
   )
 };
 
+let processCommand = (info, items) => {
+  items |> filterMap(item => {
+    switch item {
+    | String(_, name) => Some(replaceVariables(info, name))
+    | Ident(_, ident) => {
+      switch (List.assoc_opt(ident, variables(info))) {
+      | Some(string) => Some(string)
+      | None => {
+        print_endline("⚠️ Missing vbl " ++ ident);
+        None
+      }
+      }
+    };
+    | _ => {
+      print_endline("Bad build arg " ++ OpamPrinter.value(item));
+      None
+    }
+    };
+  })
+};
+
 /** TODO handle optional build things */
-let processCommandList = item => {
+let processCommandList = (info, item) => {
   switch(item) {
   | None => []
   | Some(List(_, items))
   | Some(Group(_, items)) => {
     switch items {
     | [String(_) | Ident(_), ...rest] => {
-      [
-        items |> filterMap(item => {
-          switch item {
-          | String(_, name) => Some(replaceVariables(name))
-          | Ident(_, ident) => {
-            switch (List.assoc_opt(ident, variables)) {
-            | Some(string) => Some(string)
-            | None => {
-              print_endline("Missing vbl" ++ ident);
-              None
-            }
-            }
-          };
-          | _ => {
-            print_endline("Bad build arg " ++ OpamPrinter.value(item));
-            None
-          }
-          };
-        })
-      ]
+      [items |> processCommand(info)]
     }
 
     | _ =>
     items |> filterMap(item => {
       switch item {
       | List(_, items) => {
-        let strings = items |> filterMap(item => {
-          switch item {
-          | String(_, name) => Some(replaceVariables(name))
-          | Ident(_, ident) => {
-            switch (List.assoc_opt(ident, variables)) {
-            | Some(string) => Some(string)
-            | None => {
-              print_endline("Missing vbl" ++ ident);
-              None
-            }
-            }
-          };
-          | _ => {
-            print_endline("Bad build arg " ++ OpamPrinter.value(item));
-            None
-          }
-          };
-        });
-        Some(strings)
+        Some(processCommand(info, items))
+      }
+      | Option(_, List(_, items), _) => {
+        Some(processCommand(info, items))
       }
       | _ => {
         print_endline("Skipping a non-list build thing " ++ OpamPrinter.value(item));
@@ -218,10 +207,10 @@ let processCommandList = item => {
   }
 
   | Some(Ident(_, ident)) => {
-    switch (List.assoc_opt(ident, variables)) {
+    switch (List.assoc_opt(ident, variables(info))) {
     | Some(string) => [[string]]
     | None => {
-      print_endline("Missing vbl" ++ ident);
+      print_endline("⚠️ Missing vbl " ++ ident);
       []
     }
     }
@@ -288,17 +277,17 @@ let getOpamFiles = (opam_name) => {
   }
 };
 
-let parseManifest = ({file_contents, file_name}) => {
+let parseManifest = (info, {file_contents, file_name}) => {
   let baseDir = Filename.dirname(file_name);
   let (deps, buildDeps, devDeps) = processDeps(findVariable("depends", file_contents));
   let files = getOpamFiles(file_name);
   let patches = processStringList(findVariable("patches", file_contents));
   /** OPTIMIZE: only read the files when generating the lockfile */
-  print_endline("Patches for " ++ file_name ++ " " ++ string_of_int(List.length(patches)));
+  /* print_endline("Patches for " ++ file_name ++ " " ++ string_of_int(List.length(patches))); */
   {
     fileName: file_name,
-    build: processCommandList(findVariable("build", file_contents)),
-    install: processCommandList(findVariable("install", file_contents)),
+    build: processCommandList(info, findVariable("build", file_contents)),
+    install: processCommandList(info, findVariable("install", file_contents)),
     patches,
     files,
     deps: (deps |> List.map(toDepSource)) @ [
@@ -349,20 +338,16 @@ let mergeOverride = (manifest, override) => {
 
 let getManifest = (opamOverrides, (opam, url, name, version)) => {
   let manifest = {
-    ...parseManifest(OpamParser.file(opam)),
+    ...parseManifest((name, version), OpamParser.file(opam)),
     source: Files.exists(url) ? parseUrlFile(OpamParser.file(url)) : None
   };
   switch (OpamOverrides.findApplicableOverride(opamOverrides, name, version)) {
   | None => {
-    print_endline("No override for " ++ name ++ " " ++ VersionNumber.viewVersionNumber(version));
+    /* print_endline("No override for " ++ name ++ " " ++ VersionNumber.viewVersionNumber(version)); */
     manifest
   }
   | Some(override) => {
-    print_endline("!! Found override for " ++ name);
-    switch (override.O.build) {
-    | Some(x) => print_endline("Got a build@")
-    | None => print_endline("no build")
-    };
+    /* print_endline("!! Found override for " ++ name); */
     let m = mergeOverride(manifest, override);
     m
   }
@@ -378,9 +363,6 @@ let process = ({deps, buildDeps, devDeps}) => {
 let commandListToJson = e => e |> List.map(items => `List(List.map(item => `String(item), items)));
 
 let toPackageJson = (opamOverrides, filename, name, version) => {
-  /* let file = OpamParser.file(filename); */
-  print_endline("opam file " ++ filename);
-  /* let manifest = parseManifest(file); */
   let manifest = getManifest(opamOverrides, (filename, "", withoutScope(name), switch version {
   | `Opam(t) => t
   | _ => failwith("unexpected opam version")
