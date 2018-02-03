@@ -26,10 +26,10 @@ let getFromNpmRegistry = name => {
   }
 };
 
-let getFromOpamRegistry = fullName => {
+let getFromOpamRegistry = (config, fullName) => {
   let name = OpamFile.withoutScope(fullName);
-  let base = "/Users/jared/.esy/opam-repository/packages/" ++ name;
   let (/+) = Filename.concat;
+  let base = config.Types.opamRepository /+ "packages" /+ name;
   switch (Files.readDirectory(base)) {
   | exception _ => failwith("Opam package not in registry: " ++ name)
   | entries => {

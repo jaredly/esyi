@@ -4,7 +4,8 @@ let (/+) = Filename.concat;
 let solve = (basedir) => {
   let json = Yojson.Basic.from_file(basedir /+ "package.json");
   let lockfile = Solve.solve({
-    Types.esyOpamOverrides: "/Users/jared/.esy/esy-opam-override"
+    Types.esyOpamOverrides: "/Users/jared/.esyi/esy-opam-override",
+    opamRepository: "/Users/jared/.esyi/opam-repository"
   }, `PackageJson(json));
   let json = Lockfile.lockfile_to_yojson(lockfile);
   let chan = open_out(basedir /+ "esyi.lock.json");
@@ -19,6 +20,7 @@ let fetch = (basedir) => {
   | Ok(a) => a
   };
   Fetch.fetch({
-    Types.esyOpamOverrides: "/Users/jared/.esy/esy-opam-override"
+    Types.esyOpamOverrides: "/Users/jared/.esyi/esy-opam-override",
+    opamRepository: "/Users/jared/.esyi/opam-repository"
   }, basedir, lockfile);
 };

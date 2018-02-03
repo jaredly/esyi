@@ -29,6 +29,17 @@
   peerDependencies:
     ocaml " >= 4.2.3"
 
+"@opam/ansicolor@*":
+  version "0.5.0"
+  uid "3ed6c3a31f5abbed636c59b833c30f5b"
+  resolved "@opam/ansicolor@0.5.0-3ed6c3a31f5abbed636c59b833c30f5b.tgz"
+  dependencies:
+    "@esy-ocaml/esy-installer" "^0.0.0"
+    "@esy-ocaml/substs" "^0.0.1"
+    "@opam/ocamlfind" "*"
+  peerDependencies:
+    ocaml "*"
+
 "@opam/astring@*":
   version "0.8.3"
   uid b06f886359a1b349ab4c8361ea831085
@@ -206,7 +217,7 @@
 
 "@opam/cppo@ >= 1.1.0", "@opam/cppo@ >= 1.1.2", "@opam/cppo@*":
   version "1.6.0"
-  uid e7f9ad67562d5952779e822a0a37d129
+  uid "349808856d0a52266567126c6e1a482c"
   resolved "@opam/cppo@1.6.0-e7f9ad67562d5952779e822a0a37d129.tgz"
   dependencies:
     "@esy-ocaml/esy-installer" "^0.0.0"
@@ -215,7 +226,7 @@
     "@opam/base-unix" "*"
     "@opam/jbuilder" " >= 1.0.0-beta10"
   peerDependencies:
-    ocaml "*"
+    ocaml " < 4.7.0"
 
 "@opam/cppo@ >= 1.6.0":
   version "1.6.1"

@@ -110,7 +110,7 @@ let getAvailableVersions = (cache, (name, source)) => {
 
   | Opam(semver) => {
     if (!Hashtbl.mem(cache.availableOpamVersions, name)) {
-      Hashtbl.replace(cache.availableOpamVersions, name, Registry.getFromOpamRegistry(name))
+      Hashtbl.replace(cache.availableOpamVersions, name, Registry.getFromOpamRegistry(cache.config, name))
     };
     let available = Hashtbl.find(cache.availableOpamVersions, name);
     available

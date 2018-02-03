@@ -37,3 +37,12 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 
 - [ ] maybe use a global cache for fetched things? currently using a project-local cache
 - [ ] support multiple architecture targets!
+
+This looks like... having multiple
+
+## Currently required setup
+
+```
+g clone https://github.com/esy-ocaml/esy-opam-override ~/.esyi/esy-opam-override
+g clone https://github.com/ocaml/opam-repository ~/.esyi/opam-repository --depth=1 --single-branch --branch=master
+```

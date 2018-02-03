@@ -19,4 +19,5 @@ let viewReq = req => switch req {
 
 type config = {
   esyOpamOverrides: string,
+  opamRepository: string
 };
