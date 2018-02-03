@@ -6,13 +6,31 @@ type manifest = {
   fileName: string,
   build: list(list(string)),
   install: list(list(string)),
+  /* TODO actually get the patches and files */
   patches: list(string), /* these should be absolute */
   files: list((string, string)), /* relname, sourcetext */
   deps: list(Types.dep),
   buildDeps: list(Types.dep),
   devDeps: list(Types.dep),
   peerDeps: list(Types.dep),
+  /* TODO optDependencies (depopts) */
   source: option((string, option(string))),
+  /* TODO add name_installed n stuff */
+  /*
+      "ocamlfind_version": {
+        "val": "1.7.3--1",
+        "scope": "global"
+      },
+      "ocamlfind_installed": {
+        "val": "true",
+        "scope": "global"
+      },
+      "ocamlfind_enable": {
+        "val": "enable",
+        "scope": "global"
+      },
+
+  */
   exportedEnv: list((string, (string, string))),
 };
 /* TODO parse an opam file into this manifest format */
