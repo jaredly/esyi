@@ -293,8 +293,6 @@ let parseManifest = ({file_contents, file_name}) => {
   let (deps, buildDeps, devDeps) = processDeps(findVariable("depends", file_contents));
   let files = getOpamFiles(file_name);
   let patches = processStringList(findVariable("patches", file_contents));
-   /* |> List.map(Filename.concat(baseDir)); */
-  /* let files = processStringList(findVariable("files", file_contents)) |> List.map(m => (m, Files.readFile(Filename.concat(baseDir, m)) |! "missing file")); */
   /** OPTIMIZE: only read the files when generating the lockfile */
   print_endline("Patches for " ++ file_name ++ " " ++ string_of_int(List.length(patches)));
   {
@@ -366,7 +364,6 @@ let getManifest = (opamOverrides, (opam, url, name, version)) => {
     | None => print_endline("no build")
     };
     let m = mergeOverride(manifest, override);
-    /* print_endline(String.concat("\n", List.map(x => String.concat(" -- ", x), m.build))); */
     m
   }
   }
@@ -395,8 +392,14 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
     ("esy", `Assoc([
       ("build", `List(commandListToJson(manifest.build))),
       ("install", `List(commandListToJson(manifest.install))),
+      ("buildsInSource", `Bool(true)),
       ("exportedEnv", `Assoc(
-        manifest.exportedEnv
+        ([
+          (name ++ "_version", (Lockfile.plainVersionNumber(version), "global")),
+          (name ++ "_installed", ("true", "global")),
+          (name ++ "_enable", ("enable", "global")),
+        ] @
+        manifest.exportedEnv)
         |> List.map(((name, (val_, scope))) => (
           name,
           `Assoc([
@@ -407,6 +410,7 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
       ))
       /* ("buildsInSource", "_build") */
     ])),
+    ("_resolved", `String(Types.resolvedPrefix ++ name ++ "--" ++ Lockfile.viewRealVersion(version))),
     ("peerDependencies", `Assoc([
       ("ocaml", `String("*")) /* HACK probably get this somewhere */
     ])),

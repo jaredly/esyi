@@ -6,13 +6,6 @@ type manifest = [
 
 Printexc.record_backtrace(true);
 
-type realVersion = [
-  | `Github(string)
-  | `Npm(VersionNumber.versionNumber)
-  | `Opam(VersionNumber.versionNumber)
-  | `Git(string)
-];
-
 let satisfies = (realVersion, req) => {
   switch (req, realVersion) {
   | (Types.Github(source), `Github(source_)) when source == source_ => true
@@ -36,10 +29,10 @@ type cache = {
   opamOverrides: list((string, Semver.semver, string)),
   npmPackages: Hashtbl.t(string, Yojson.Basic.json),
   opamPackages: Hashtbl.t(string, OpamFile.manifest),
-  allBuildDeps: Hashtbl.t(string, list((realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
+  allBuildDeps: Hashtbl.t(string, list((Lockfile.realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
   availableNpmVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, Yojson.Basic.json))),
   availableOpamVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, OpamFile.thinManifest))),
-  manifests: Hashtbl.t((string, realVersion), (manifest, list(Types.dep), list(Types.dep))),
+  manifests: Hashtbl.t((string, Lockfile.realVersion), (manifest, list(Types.dep), list(Types.dep))),
 };
 
 let toRealVersion = versionPlus => switch versionPlus {
@@ -51,8 +44,8 @@ let toRealVersion = versionPlus => switch versionPlus {
 type state = {
   cache,
   universe: Cudf.universe,
-  lookupRealVersion: Hashtbl.t((string, int), realVersion),
-  lookupIntVersion: Hashtbl.t((string, realVersion), int),
+  lookupRealVersion: Hashtbl.t((string, int), Lockfile.realVersion),
+  lookupIntVersion: Hashtbl.t((string, Lockfile.realVersion), int),
 };
 
 let versionTicker = ref(0);
@@ -72,13 +65,6 @@ let matchesSource = (source, versionCache, package) => {
   satisfies(version, source)
 };
 
-let viewSource = source => switch source {
-| Types.Npm(semver) => "npm: " ++ Semver.viewSemver(semver)
-| Opam(semver) => "opam: " ++ Semver.viewSemver(semver)
-| Github(s) => "github: " ++ s
-| Git(s) => "git: " ++ s
-};
-
 let cudfDep = (state, (name, source)) => {
   let available = Cudf.lookup_packages(state.universe, name);
   let num = List.length(available);
@@ -86,7 +72,7 @@ let cudfDep = (state, (name, source)) => {
   |> List.filter(matchesSource(source, state.lookupRealVersion))
   |> List.map(package => (package.Cudf.package, Some((`Eq, package.Cudf.version))));
   if (available == []) {
-    print_endline("Opam semver wrong " ++ viewSource(source));
+    print_endline("Opam semver wrong " ++ Types.viewReq(source));
     failwith("No package found for " ++ name ++ " when converting to a cudf dep (started with " ++ string_of_int(num) ++ ")")
   } else {
     available

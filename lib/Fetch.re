@@ -5,6 +5,20 @@ let consume = (fn, opt) => switch opt { | None => () | Some(x) => fn(x)};
 
 let expectSuccess = (msg, v) => if (v) { () } else { failwith(msg) };
 
+let addResolvedFieldToPackageJson = (filename, name, version) => {
+  let json = switch (Yojson.Basic.from_file(filename)) {
+  | `Assoc(items) => items
+  | _ => failwith("bad json")
+  };
+  let raw = Yojson.Basic.pretty_to_string(`Assoc([
+    ("_resolved", `String(Types.resolvedPrefix ++ name ++ "--" ++ Lockfile.viewRealVersion(version))),
+    ...json
+  ]));
+  Files.writeFile(filename, raw) |> expectSuccess("Could not write back package json");
+  /** TODO */
+  ()
+};
+
 let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opamFile}, source) => {
   let dest = basedir /+ "node_modules" /+ name;
   Files.mkdirp(dest);
@@ -25,7 +39,8 @@ let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opa
   | None => {
     if (!Files.exists(packageJson)) {
       failwith("No opam file or package.json");
-    }
+    };
+    addResolvedFieldToPackageJson(packageJson, name, version);
   }
   | Some(opamFile) => {
     if (Files.exists(dest /+ "esy.json")) {
