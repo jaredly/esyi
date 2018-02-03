@@ -13,6 +13,8 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 - [x] sharing resolved buildDependencies when possible
 - [x] generating a lockfile! (it's yojson at the moment, so don't expect anything fancy)
 - [x] fetching all the things, with some opam -> package.json conversion
+- [x] write out override files
+- [ ] handle override patches too
 
 ## Needed to work with current esy (get something building!)
 

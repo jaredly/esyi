@@ -251,7 +251,6 @@ let parseManifest = ({file_contents, file_name}) => {
 
 let parseDepVersion = ((name, version)) => {
   PackageJson.parseNpmSource((name, version))
-  /* (name, PackageJson.parseNpmSource(version)) */
 };
 
 module StrSet = Set.Make(String);
@@ -323,7 +322,7 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
   | _ => failwith("unexpected opam version")
   }));
 
-  `Assoc([
+  (`Assoc([
     ("name", `String(name)),
     ("version", `String(Lockfile.plainVersionNumber(version))),
     ("esy", `Assoc([
@@ -349,7 +348,7 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
       @
       (manifest.buildDeps |> List.map(((name, _)) => (name, `String("*"))))
     ))
-  ])
+  ]), manifest.files)
 };
 
 /* let process = (parsed: OpamParserTypes.opamfile) => switch parsed {

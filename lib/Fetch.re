@@ -3,6 +3,8 @@ let (/+) = Filename.concat;
 
 let consume = (fn, opt) => switch opt { | None => () | Some(x) => fn(x)};
 
+let expectSuccess = (msg, v) => if (v) { () } else { failwith(msg) };
+
 let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opamFile}, source) => {
   let dest = basedir /+ "node_modules" /+ name;
   Files.mkdirp(dest);
@@ -12,9 +14,9 @@ let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opa
     let withVersion = safe ++ Lockfile.viewRealVersion(version);
     let tarball = cache /+ withVersion ++ ".tarball";
     if (!Files.isFile(tarball)) {
-      ExecCommand.execSync(~cmd="curl -L --output "++ tarball ++ " " ++ url, ()) |> ignore;
+      ExecCommand.execSync(~cmd="curl -L --output "++ tarball ++ " " ++ url, ()) |> snd |> expectSuccess("failed to fetch with curl");
     };
-    ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> ignore;
+    ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
   });
 
   print_endline("Checking " ++ dest /+ "package.json");
@@ -27,11 +29,15 @@ let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opa
   }
   | Some(opamFile) => {
     if (Files.exists(dest /+ "esy.json")) {
-      Unix.unlink(dest  /+ "esy.json");
+      Unix.unlink(dest /+ "esy.json");
     };
-    let packageJson = OpamFile.toPackageJson(opamOverrides, opamFile, name, version);
+    let (packageJson, files) = OpamFile.toPackageJson(opamOverrides, opamFile, name, version);
     let raw = Yojson.Basic.pretty_to_string(packageJson);
-    Files.writeFile(dest /+ "package.json", raw) |> ignore;
+    Files.writeFile(dest /+ "package.json", raw) |> expectSuccess("could not write package.json");
+    files |> List.iter(((relpath, contents)) => {
+      Files.mkdirp(Filename.dirname(dest /+ relpath));
+      Files.writeFile(dest /+ relpath, contents) |> expectSuccess("could not write file " ++ relpath)
+    });
     /* Yojson.Basic.to_file(dest /+ "package.json", packageJson); */
     print_endline("Wrote package.json out " ++ dest /+ "package.json")
   }
