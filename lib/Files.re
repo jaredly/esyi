@@ -123,3 +123,18 @@ let rec removeDeep = path => {
   }
 };
 
+let (/+) = Filename.concat;
+
+let crawl = (base) => {
+  let rec inner = (base, rel, fn) => {
+    readDirectory(base) |> List.iter(name => {
+      let full = base /+ name;
+      if (isDirectory(full)) {
+        inner(full, rel /+ name, fn)
+      } else {
+        fn(rel /+ name, full)
+      }
+    })
+  };
+  inner(base, "")
+};

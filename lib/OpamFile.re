@@ -2,6 +2,8 @@
 open OpamParserTypes;
 open OpamOverrides.Infix;
 
+let expectSuccess = (msg, v) => if (v) { () } else { failwith(msg) };
+
 type manifest = {
   fileName: string,
   build: list(list(string)),
@@ -128,6 +130,7 @@ let filterMap = (fn, items) => {
   List.map(fn, items) |> List.filter(x => x != None) |> List.map(x => switch (x) { | Some(x) => x | None => assert(false)})
 };
 
+/** TODO handle more variables */
 let variables = [
   ("jobs", "4"),
   ("make", "make"),
@@ -150,12 +153,37 @@ let replaceVariables = string => {
   )
 };
 
+/** TODO handle optional build things */
 let processCommandList = item => {
   switch(item) {
   | None => []
   | Some(List(_, items))
   | Some(Group(_, items)) => {
+    switch items {
+    | [String(_) | Ident(_), ...rest] => {
+      [
+        items |> filterMap(item => {
+          switch item {
+          | String(_, name) => Some(replaceVariables(name))
+          | Ident(_, ident) => {
+            switch (List.assoc_opt(ident, variables)) {
+            | Some(string) => Some(string)
+            | None => {
+              print_endline("Missing vbl" ++ ident);
+              None
+            }
+            }
+          };
+          | _ => {
+            print_endline("Bad build arg " ++ OpamPrinter.value(item));
+            None
+          }
+          };
+        })
+      ]
+    }
 
+    | _ =>
     items |> filterMap(item => {
       switch item {
       | List(_, items) => {
@@ -185,6 +213,8 @@ let processCommandList = item => {
       }
       }
     });
+    }
+
   }
 
   | Some(Ident(_, ident)) => {
@@ -245,15 +275,34 @@ let parseUrlFile = ({file_contents}) => {
 
 let toDepSource = ((name, semver)) => (name, Types.Opam(semver));
 
+let getOpamFiles = (opam_name) => {
+  let dir = Filename.concat(Filename.dirname(opam_name), "files");
+  if (Files.isDirectory(dir)) {
+    let collected = ref([]);
+    Files.crawl(dir, (rel, full) => {
+      collected := [(rel, Files.readFile(full) |! "opam file unreadable"), ...collected^]
+    });
+    collected^;
+  } else {
+    []
+  }
+};
+
 let parseManifest = ({file_contents, file_name}) => {
   let baseDir = Filename.dirname(file_name);
   let (deps, buildDeps, devDeps) = processDeps(findVariable("depends", file_contents));
+  let files = getOpamFiles(file_name);
+  let patches = processStringList(findVariable("patches", file_contents));
+   /* |> List.map(Filename.concat(baseDir)); */
+  /* let files = processStringList(findVariable("files", file_contents)) |> List.map(m => (m, Files.readFile(Filename.concat(baseDir, m)) |! "missing file")); */
+  /** OPTIMIZE: only read the files when generating the lockfile */
+  print_endline("Patches for " ++ file_name ++ " " ++ string_of_int(List.length(patches)));
   {
     fileName: file_name,
     build: processCommandList(findVariable("build", file_contents)),
     install: processCommandList(findVariable("install", file_contents)),
-    patches: processStringList(findVariable("patches", file_contents)) |> List.map(Filename.concat(baseDir)),
-    files: processStringList(findVariable("files", file_contents)) |> List.map(m => (m, Files.readFile(Filename.concat(baseDir, m)) |! "missing file")),
+    patches,
+    files,
     deps: (deps |> List.map(toDepSource)) @ [
       /* HACK? Not sure where/when this should be specified */
       ("@esy-ocaml/substs", Npm(Semver.Any)),
@@ -317,7 +366,7 @@ let getManifest = (opamOverrides, (opam, url, name, version)) => {
     | None => print_endline("no build")
     };
     let m = mergeOverride(manifest, override);
-    print_endline(String.concat("\n", List.map(x => String.concat(" -- ", x), m.build)));
+    /* print_endline(String.concat("\n", List.map(x => String.concat(" -- ", x), m.build))); */
     m
   }
   }
@@ -366,7 +415,7 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
       @
       (manifest.buildDeps |> List.map(((name, _)) => (name, `String("*"))))
     ))
-  ]), manifest.files)
+  ]), manifest.files, manifest.patches)
 };
 
 /* let process = (parsed: OpamParserTypes.opamfile) => switch parsed {

@@ -14,8 +14,8 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 - [x] generating a lockfile! (it's yojson at the moment, so don't expect anything fancy)
 - [x] fetching all the things, with some opam -> package.json conversion
 - [x] write out override files
-- [ ] get the files from opam too tho
-- [ ] handle override patches too
+- [x] get the files from opam too tho
+- [x] handle override patches too
 - [ ] add a `_resolved` field
 
 ## Needed to work with current esy (get something building!)
@@ -37,6 +37,7 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 
 ## Later on
 
+- [ ] maybe fetch tarballs from the opam mirror directly
 - [ ] maybe use a global cache for fetched things? currently using a project-local cache
 - [ ] support multiple architecture targets!
 

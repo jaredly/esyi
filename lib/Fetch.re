@@ -31,13 +31,21 @@ let unpackArchive = (opamOverrides, basedir, cache, {Lockfile.name, version, opa
     if (Files.exists(dest /+ "esy.json")) {
       Unix.unlink(dest /+ "esy.json");
     };
-    let (packageJson, files) = OpamFile.toPackageJson(opamOverrides, opamFile, name, version);
+    let (packageJson, files, patches) = OpamFile.toPackageJson(opamOverrides, opamFile, name, version);
     let raw = Yojson.Basic.pretty_to_string(packageJson);
     Files.writeFile(dest /+ "package.json", raw) |> expectSuccess("could not write package.json");
     files |> List.iter(((relpath, contents)) => {
       Files.mkdirp(Filename.dirname(dest /+ relpath));
       Files.writeFile(dest /+ relpath, contents) |> expectSuccess("could not write file " ++ relpath)
     });
+
+    patches |> List.iter((abspath) => {
+      ExecCommand.execSync(
+        ~cmd=Printf.sprintf("sh -c 'cd %s && patch -p1 < %s'", dest, abspath),
+        ()
+      ) |> snd |> expectSuccess("Failed to patch")
+    });
+
     /* Yojson.Basic.to_file(dest /+ "package.json", packageJson); */
     print_endline("Wrote package.json out " ++ dest /+ "package.json")
   }

@@ -191,7 +191,7 @@ let getContents = baseDir => {
     | None => failwith("must have either package.json or package.yaml " ++ baseDir)
     | Some(name) => {
       let json = Yaml.of_string(Files.readFile(name) |! "unable to read yaml") |> expectResult("Bad yaml file") |> yamlToJson;
-      print_endline(Yojson.Basic.to_string(json));
+      /* print_endline(Yojson.Basic.to_string(json)); */
       try(ProcessJson.process(json)) {
       | Failure(message) => failwith("Bad yaml jsom " ++ baseDir ++ " " ++ message)
       }
