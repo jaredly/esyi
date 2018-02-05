@@ -15,6 +15,7 @@ type manifest = {
   buildDeps: list(Types.dep),
   devDeps: list(Types.dep),
   peerDeps: list(Types.dep),
+  optDependencies: list(Types.dep),
   /* TODO optDependencies (depopts) */
   source: option((string, option(string))),
   /* TODO add name_installed n stuff */
@@ -31,7 +32,6 @@ type manifest = {
         "val": "enable",
         "scope": "global"
       },
-
   */
   exportedEnv: list((string, (string, string))),
 };
@@ -291,6 +291,7 @@ let getOpamFiles = (opam_name) => {
 let parseManifest = (info, {file_contents, file_name}) => {
   let baseDir = Filename.dirname(file_name);
   let (deps, buildDeps, devDeps) = processDeps(findVariable("depends", file_contents));
+  let (depopts, _, _) = processDeps(findVariable("depopts", file_contents));
   let files = getOpamFiles(file_name);
   let patches = processStringList(findVariable("patches", file_contents));
   /** OPTIMIZE: only read the files when generating the lockfile */
@@ -311,6 +312,7 @@ let parseManifest = (info, {file_contents, file_name}) => {
     buildDeps: buildDeps |> List.map(toDepSource),
     devDeps: devDeps |> List.map(toDepSource),
     peerDeps: [], /* TODO peer deps */
+    optDependencies: depopts |> List.map(toDepSource),
     source: None,
     exportedEnv: [],
   };
@@ -390,9 +392,9 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
       ("buildsInSource", `Bool(true)),
       ("exportedEnv", `Assoc(
         ([
-          (name ++ "_version", (Lockfile.plainVersionNumber(version), "global")),
-          (name ++ "_installed", ("true", "global")),
-          (name ++ "_enable", ("enable", "global")),
+          (withoutScope(name) ++ "_version", (Lockfile.plainVersionNumber(version), "global")),
+          (withoutScope(name) ++ "_installed", ("true", "global")),
+          (withoutScope(name) ++ "_enable", ("enable", "global")),
         ] @
         manifest.exportedEnv)
         |> List.map(((name, (val_, scope))) => (
@@ -409,6 +411,9 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
     ("peerDependencies", `Assoc([
       ("ocaml", `String("*")) /* HACK probably get this somewhere */
     ])),
+    ("optDependencies", `Assoc(
+      (manifest.optDependencies |> List.map(((name, _)) => (name, `String("*"))))
+    )),
     ("dependencies", `Assoc(
       (manifest.deps |> List.map(((name, _)) => (name, `String("*"))))
       @

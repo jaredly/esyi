@@ -19,14 +19,18 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 - [x] add a `_resolved` field
 - [x] opam conversion
     - [x] incorporate `esy-opam-overrides`
-- [ ] get jbuilder building
+- [x] get jbuilder building
+- [x] get [the test repository] building!
 
-# Needed to work with current esy (get something building!)
+## Need to work generally
+
+- [ ] have the ocaml peerdependency version actually matter (I ignore the version currently)
+- [ ] convert opam `(>= 1.2.0 & < 1.3.0)` into `~1.2.0` (and similar)
+- [ ] respect the "available" flag in `opam`
+- [ ] process `*.in` files (I think I need to do that?)
 
 ## Needed less urgently
 
-- [ ] have the opam peerdependency version actually matter (I ignore the version currently)
-- [ ] convert opam `(>= 1.2.0 & < 1.3.0)` into `~1.2.0` (and similar)
 - [ ] actually validate checksums
 - [ ] deciding what we want to do with devDependencies (currently they're dumped into build dependences)
 - [ ] make the generated lockfile a nicer format (maybe yaml/toml?)
