@@ -19,6 +19,7 @@ let fetch = (basedir) => {
   | Error(a) => failwith("Bad lockfile")
   | Ok(a) => a
   };
+  Files.removeDeep(basedir /+ "node_modules");
   Fetch.fetch({
     Types.esyOpamOverrides: "/Users/jared/.esyi/esy-opam-override",
     opamRepository: "/Users/jared/.esyi/opam-repository"

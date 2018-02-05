@@ -16,15 +16,16 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 - [x] write out override files
 - [x] get the files from opam too tho
 - [x] handle override patches too
-- [ ] add a `_resolved` field
+- [x] add a `_resolved` field
+- [x] opam conversion
+    - [x] incorporate `esy-opam-overrides`
+- [ ] get jbuilder building
 
-## Needed to work with current esy (get something building!)
-
-- [ ] opam conversion
-    - [ ] incorporate `esy-opam-overrides`
+# Needed to work with current esy (get something building!)
 
 ## Needed less urgently
 
+- [ ] have the opam peerdependency version actually matter (I ignore the version currently)
 - [ ] convert opam `(>= 1.2.0 & < 1.3.0)` into `~1.2.0` (and similar)
 - [ ] actually validate checksums
 - [ ] deciding what we want to do with devDependencies (currently they're dumped into build dependences)
