@@ -156,22 +156,6 @@ let fetch = (config, basedir, lockfile) => {
     let dest = basedir /+ "node_modules" /+ dep.name;
     Files.mkdirp(Filename.dirname(dest));
     symlink(modcache /+ absname(dep.name, dep.version), dest);
-
-    /* unpackArchive(opamOverrides, basedir, cache, dep);
-    let dest = basedir /+ "node_modules" /+ dep.name;
-    print_endline("Linking to " ++ dest);
-    Files.mkdirp(Filename.dirname(dest));
-    Unix.symlink(~to_dir=true, modcache /+ absname(dep.name, dep.version), dest);
-    let base = modcache /+ absname(dep.name, dep.version);
-    dep.buildDeps |> List.iter(((name, realVersion)) => {
-      print_endline("Dev dep here " ++ absname(name, realVersion));
-      let dest = base /+ "node_modules" /+ name;
-      if (Files.exists(dest)) {
-        failwith("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
-      };
-      Files.mkdirp(Filename.dirname(dest));
-      Unix.symlink(modcache /+ absname(name, realVersion), dest)
-    }) */
   });
 
   lockfile.solvedBuildDeps |> List.iter(((name, realVersion)) => {
@@ -188,33 +172,6 @@ let fetch = (config, basedir, lockfile) => {
     switch versions {
     | [(dep, childDeps)] => {
         fetchDep(opamOverrides, modcache, cache, dep, childDeps);
-        /* unpackArchive(opamOverrides, basedir, cache, dep);
-        let base = modcache /+ absname(dep.name, dep.version);
-
-        dep.buildDeps |> List.iter(((name, realVersion)) => {
-          let dest = base /+ "node_modules" /+ name;
-          if (Files.exists(dest)) {
-            failwith("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
-          };
-
-          Files.mkdirp(Filename.dirname(dest));
-          Unix.symlink(modcache /+ absname(name, realVersion), dest)
-        });
-
-        childDeps |> List.iter((childDep) => {
-          unpackArchive(opamOverrides, basedir, cache, childDep);
-
-          childDep.buildDeps |> List.iter(((name, realVersion)) => {
-            let dest = base /+ "node_modules" /+ name;
-            if (Files.exists(dest)) {
-              failwith("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
-            };
-
-            Files.mkdirp(Filename.dirname(dest));
-            Unix.symlink(modcache /+ absname(name, realVersion), dest)
-          });
-
-        }); */
     }
     | _ => failwith("Can't handle multiple versions just yet")
     }

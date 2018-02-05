@@ -134,14 +134,25 @@ let filterMap = (fn, items) => {
 let variables = ((name, version)) => [
   ("jobs", "4"),
   ("make", "make"),
+  ("ocaml-native", "true"),
+  ("ocaml-native-dynlink", "true"),
   ("bin", "$cur__install/bin"),
   ("lib", "$cur__install/lib"),
   ("man", "$cur__install/man"),
+  ("pinned", "false"),
   ("name", name),
   ("prefix", "$cur__install"),
 ];
 
 let replaceVariables = (info, string) => {
+  let string = string
+    |> Str.global_replace(Str.regexp("%{\\(.+\\):installed}%"), "${\\1_installed:-false}")
+    |> Str.global_replace(Str.regexp("%{\\(.+\\):enable}%"), "${\\1_enable:-disable}")
+    |> Str.global_replace(Str.regexp("%{\\(.+\\):version}%"), "${\\1_version}")
+    |> Str.global_replace(Str.regexp("%{\\(.+\\):bin}%"), "${\\1.bin}")
+    |> Str.global_replace(Str.regexp("%{\\(.+\\):share}%"), "${\\1.share}")
+    |> Str.global_replace(Str.regexp("%{\\(.+\\):lib}%"), "${\\1.lib}")
+  ;
   List.fold_left(
     (string, (name, res)) => {
       Str.global_replace(
@@ -286,7 +297,9 @@ let parseManifest = (info, {file_contents, file_name}) => {
   /* print_endline("Patches for " ++ file_name ++ " " ++ string_of_int(List.length(patches))); */
   {
     fileName: file_name,
-    build: processCommandList(info, findVariable("build", file_contents)),
+    build: processCommandList(info, findVariable("build", file_contents)) @ [
+      ["sh", "-c", "(esy-installer || true)"]
+    ],
     install: processCommandList(info, findVariable("install", file_contents)),
     patches,
     files,

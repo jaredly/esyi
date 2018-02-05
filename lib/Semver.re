@@ -48,12 +48,20 @@ let parseSemver = value => {
   | ["*"] => Any
   | [major] => {
     let (major, rest) = parsePatch(major);
-    UpToMajor((major, 0, 0, rest))
+    if (rest == None) {
+      UpToMajor((major, 0, 0, rest))
+    } else {
+      Exactly((major, 0, 0, rest))
+    }
   }
   | [major, "*"] => UpToMajor((int_of_string(major), 0, 0, None))
   | [major, minor] => {
     let (minor, rest) = parsePatch(minor);
-    UpToMinor((int_of_string(major), minor, 0, rest))
+    if (rest == None) {
+      UpToMinor((int_of_string(major), minor, 0, rest))
+    } else {
+      Exactly((int_of_string(major), minor, 0, rest))
+    }
   }
   | [major, minor, "*"] => UpToMinor((int_of_string(major), int_of_string(minor), 0, None))
   | [major, minor, patch] => Exactly(parseThreeParts(major, minor, patch))

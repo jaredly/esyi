@@ -37,8 +37,8 @@ type cache = {
 
 let toRealVersion = versionPlus => switch versionPlus {
 | `Github(x) => `Github(x)
-| `Npm(x, _) => `Npm(x)
-| `Opam(x, _) => `Opam(x)
+| `Npm(x, _, _) => `Npm(x)
+| `Opam(x, _, _) => `Opam(x)
 };
 
 type state = {
@@ -48,7 +48,7 @@ type state = {
   lookupIntVersion: Hashtbl.t((string, Lockfile.realVersion), int),
 };
 
-let versionTicker = ref(0);
+let versionTicker = ref(100000);
 
 let nextVersion = () => {
   incr(versionTicker);
@@ -90,8 +90,10 @@ let getAvailableVersions = (cache, (name, source)) => {
     };
     let available = Hashtbl.find(cache.availableNpmVersions, name);
     available
-    |> List.filter(((version, json)) => Semver.matches(version, semver))
-    |> List.map(((version, json)) => `Npm(version, json));
+    |> List.sort(((va, _), (vb, _)) => VersionNumber.compareVersionNumbers(va, vb))
+    |> List.mapi((i, (v, j)) => (v, j, i))
+    |> List.filter(((version, json, i)) => Semver.matches(version, semver))
+    |> List.map(((version, json, i)) => `Npm(version, json, i));
   }
 
   | Opam(semver) => {
@@ -100,8 +102,10 @@ let getAvailableVersions = (cache, (name, source)) => {
     };
     let available = Hashtbl.find(cache.availableOpamVersions, name);
     available
-    |> List.filter(((version, path)) => Semver.matches(version, semver))
-    |> List.map(((version, path)) => `Opam(version, path));
+    |> List.sort(((va, _), (vb, _)) => VersionNumber.compareVersionNumbers(va, vb))
+    |> List.mapi((i, (v, j)) => (v, j, i))
+    |> List.filter(((version, path, i)) => Semver.matches(version, semver))
+    |> List.map(((version, path, i)) => `Opam(version, path, i));
   }
   | _ => []
   }
@@ -113,8 +117,8 @@ let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
   | exception Not_found => {
     let manifest = switch versionPlus {
     | `Github(url) => Registry.getGithubManifest(url)
-    | `Npm(version, json) => `PackageJson(json)
-    | `Opam(version, path) => `OpamFile(OpamFile.getManifest(opamOverrides, path))
+    | `Npm(version, json, _) => `PackageJson(json)
+    | `Opam(version, path, _) => `OpamFile(OpamFile.getManifest(opamOverrides, path))
     };
     let (deps, buildDeps) = Manifest.getDeps(manifest);
     let res = (manifest, deps, buildDeps);
@@ -125,8 +129,7 @@ let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
   };
 };
 
-let rec addPackage = (name, realVersion, deps, buildDeps, state, manifest) => {
-  let version = nextVersion();
+let rec addPackage = (name, realVersion, version, deps, buildDeps, state, manifest) => {
   Hashtbl.replace(state.lookupIntVersion, (name, realVersion), version);
   Hashtbl.replace(state.lookupRealVersion, (name, version), realVersion);
   Hashtbl.replace(state.cache.manifests, (name, realVersion), (manifest, deps, buildDeps));
@@ -143,10 +146,14 @@ let rec addPackage = (name, realVersion, deps, buildDeps, state, manifest) => {
 
 and addToUniverse = (state, (name, source)) => {
   getAvailableVersions(state.cache, (name, source)) |> List.iter(versionPlus => {
-    let realVersion = toRealVersion(versionPlus);
+    let (realVersion, i) = switch versionPlus {
+    | `Github(v) => (`Github(v), nextVersion())
+    | `Opam(v, _, i) => (`Opam(v), i)
+    | `Npm(v, _, i) => (`Npm(v), i)
+    };
     if (!Hashtbl.mem(state.lookupIntVersion, (name, realVersion))) {
       let (manifest, deps, buildDeps) = getCachedManifest(state.cache.opamOverrides, state.cache.manifests, (name, versionPlus));
-      addPackage(name, realVersion, deps, buildDeps, state, manifest)
+      addPackage(name, realVersion, i, deps, buildDeps, state, manifest)
     }
   });
 };
@@ -157,7 +164,7 @@ let rootPackage = (deps, state) => {
   {
     ...Cudf.default_package,
     package: rootName,
-    version: nextVersion(),
+    version: 1,
     depends: List.map(cudfDep(state), deps)
   }
 };
