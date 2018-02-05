@@ -113,9 +113,12 @@ let rec copyDeep = (~source, ~dest) => {
 };
 
 let rec removeDeep = path => {
-  switch (maybeStat(path)) {
-  | None => ()
-  | Some({Unix.st_kind: Unix.S_DIR}) =>
+  switch (Unix.lstat(path)) {
+  | exception Unix.Unix_error(Unix.ENOENT, _, _) => ()
+  | {Unix.st_kind: Unix.S_LNK} => {
+    Unix.unlink(path)
+  }
+  | {Unix.st_kind: Unix.S_DIR} =>
     readDirectory(path)
     |> List.iter((name) => removeDeep(Filename.concat(path, name)));
     Unix.rmdir(path);
