@@ -71,7 +71,9 @@ let rec parseRange = opamvalue => {
   open GenericVersion;
   switch opamvalue {
   | Prefix_relop(_, op, String(_, version)) => fromPrefix(op, version)
-  | Logop(_, `And, left, right) => And(parseRange(left), parseRange(right))
+  | Logop(_, `And, left, right) => {
+    And(parseRange(left), parseRange(right))
+  }
   | Logop(_, `Or, left, right) => Or(parseRange(left), parseRange(right))
   | String(_, version) => Exactly(parseConcrete(version))
   | y => {
@@ -85,12 +87,40 @@ let rec parseRange = opamvalue => {
 let toDep = opamvalue => {
   open OpamParserTypes;
   open GenericVersion;
-  let (name, s) = switch opamvalue {
-  | String(_, name) => (name, Any)
-  | Option(_, String(_, name), [option]) => (name, parseRange(option))
+  switch opamvalue {
+  | String(_, name) => (name, Any, false, false)
+  | Option(_, String(_, name), [Ident(_, "build")]) => (name, Any, true, false)
+  | Option(_, String(_, name), [Logop(_, `And, Ident(_, "build"), version)]) => (name, parseRange(version), true, false)
+  | Option(_, String(_, name), [Ident(_, "test")]) => (name, Any, false, true)
+  | Option(_, String(_, name), [Logop(_, `And, Ident(_, "test"), version)]) => (name, parseRange(version), false, true)
+  | Option(_, String(_, name), [option]) => (name, parseRange(option), false, false)
   | _ => {
     failwith("Can't parse this opam dep " ++ OpamPrinter.value(opamvalue))
   }
   };
-  (name, s)
+};
+
+let rec compare = (Alpha(a, na), Alpha(b, nb)) => {
+  if (a == b) {
+    switch (na, nb) {
+    | (None, None) => 0
+    | (None, _) => -1
+    | (_, None) => 1
+    | (Some(na), Some(nb)) => compareNums(na, nb)
+    }
+  } else {
+    /** TODO include the rule where "~" is sorted before the empty (none) string */
+    Pervasives.compare(a, b)
+  }
+} and compareNums = (Num(a, aa), Num(b, ab)) => {
+  if (a == b) {
+    switch (aa, ab) {
+    | (None, None) => 0
+    | (None, _) => -1
+    | (_, None) => 1
+    | (Some(aa), Some(ab)) => compare(aa, ab)
+    }
+  } else {
+    a - b
+  }
 };

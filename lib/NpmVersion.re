@@ -24,8 +24,8 @@ let rec rawToRange = (raw: raw): range => {
   | `AtLeast(c) => AtLeast(rawToConcrete(c))
   | `Exactly(c) => Exactly(c)
   /* TODO the rules here are more complicated. see https://docs.npmjs.com/misc/semver */
-  | `UpToMinor((m, i, p, r)) => Between((m, i, p, r), (m, i + 1, 0, None))
-  | `UpToMajor((m, i, p, r)) => Between((m, i, p, r), (m + 1, 0, 0, None))
+  | `UpToMinor((m, i, p, r)) => And(AtLeast((m, i, p, r)), LessThan((m, i + 1, 0, None)))
+  | `UpToMajor((m, i, p, r)) => And(AtLeast((m, i, p, r)), LessThan((m + 1, 0, 0, None)))
   | `Any => Any
   }
 };

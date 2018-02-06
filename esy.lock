@@ -14,7 +14,7 @@
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/@esy-ocaml/substs/-/substs-0.0.1.tgz#59ebdbbaedcda123fc7ed8fb2b302b7d819e9a46"
 
-"@opam/alcotest@0.8.1":
+"@opam/alcotest@*", "@opam/alcotest@0.8.1":
   version "0.8.1"
   uid "1adc2d5daa9852e7b2cd50de366a0f2a"
   resolved "@opam/alcotest@0.8.1-bd87728ebc338cdc86646e4855e495bf.tgz"

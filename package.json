@@ -33,6 +33,7 @@
   "buildDependencies": {
     "@opam/jbuilder": "^1.0.0-beta16",
     "@opam/menhir": "*",
+    "@opam/reason": "3.0.4",
     "@opam/ocamllex": "*",
     "@esy-ocaml/esy-installer": "^0.0.0"
   },
