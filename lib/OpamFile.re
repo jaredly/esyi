@@ -144,14 +144,20 @@ let variables = ((name, version)) => [
   ("prefix", "$cur__install"),
 ];
 
+let cleanEnvName = Str.global_replace(Str.regexp("-"), "_");
+
+let replaceGroupWithTransform = (rx, transform) => {
+  Str.global_substitute(rx, s => transform(Str.matched_group(0, s)))
+};
+
 let replaceVariables = (info, string) => {
   let string = string
-    |> Str.global_replace(Str.regexp("%{\\(.+\\):installed}%"), "${\\1_installed:-false}")
-    |> Str.global_replace(Str.regexp("%{\\(.+\\):enable}%"), "${\\1_enable:-disable}")
-    |> Str.global_replace(Str.regexp("%{\\(.+\\):version}%"), "${\\1_version}")
-    |> Str.global_replace(Str.regexp("%{\\(.+\\):bin}%"), "${\\1.bin}")
-    |> Str.global_replace(Str.regexp("%{\\(.+\\):share}%"), "${\\1.share}")
-    |> Str.global_replace(Str.regexp("%{\\(.+\\):lib}%"), "${\\1.lib}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):installed}%"), name => "${" ++ cleanEnvName(name) ++ "_installed:-false}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):enable}%"), name => "${" ++ cleanEnvName(name) ++ "_enable:-disable}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):version}%"), name => "${" ++ cleanEnvName(name) ++ "_version}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):bin}%"), name => "${" ++ cleanEnvName(name) ++ ".bin}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):share}%"), name => "${" ++ cleanEnvName(name) ++ ".share}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):lib}%"), name => "${" ++ cleanEnvName(name) ++ ".lib}")
   ;
   List.fold_left(
     (string, (name, res)) => {
@@ -392,9 +398,9 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
       ("buildsInSource", `Bool(true)),
       ("exportedEnv", `Assoc(
         ([
-          (withoutScope(name) ++ "_version", (Lockfile.plainVersionNumber(version), "global")),
-          (withoutScope(name) ++ "_installed", ("true", "global")),
-          (withoutScope(name) ++ "_enable", ("enable", "global")),
+          (cleanEnvName(withoutScope(name)) ++ "_version", (Lockfile.plainVersionNumber(version), "global")),
+          (cleanEnvName(withoutScope(name)) ++ "_installed", ("true", "global")),
+          (cleanEnvName(withoutScope(name)) ++ "_enable", ("enable", "global")),
         ] @
         manifest.exportedEnv)
         |> List.map(((name, (val_, scope))) => (
