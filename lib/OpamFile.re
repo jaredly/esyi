@@ -139,6 +139,7 @@ let variables = ((name, version)) => [
   ("bin", "$cur__install/bin"),
   ("lib", "$cur__install/lib"),
   ("man", "$cur__install/man"),
+  ("share", "$cur__install/share"),
   ("pinned", "false"),
   ("name", name),
   ("prefix", "$cur__install"),
@@ -147,17 +148,17 @@ let variables = ((name, version)) => [
 let cleanEnvName = Str.global_replace(Str.regexp("-"), "_");
 
 let replaceGroupWithTransform = (rx, transform) => {
-  Str.global_substitute(rx, s => transform(Str.matched_group(0, s)))
+  Str.global_substitute(rx, s => transform(Str.matched_group(1, s)))
 };
 
 let replaceVariables = (info, string) => {
   let string = string
-    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):installed}%"), name => "${" ++ cleanEnvName(name) ++ "_installed:-false}")
-    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):enable}%"), name => "${" ++ cleanEnvName(name) ++ "_enable:-disable}")
-    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):version}%"), name => "${" ++ cleanEnvName(name) ++ "_version}")
-    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):bin}%"), name => "${" ++ cleanEnvName(name) ++ ".bin}")
-    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):share}%"), name => "${" ++ cleanEnvName(name) ++ ".share}")
-    |> replaceGroupWithTransform(Str.regexp("%{\\(.+\\):lib}%"), name => "${" ++ cleanEnvName(name) ++ ".lib}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\([^}]+\\):installed}%"), name => "${" ++ cleanEnvName(name) ++ "_installed:-false}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\([^}]+\\):enable}%"), name => "${" ++ cleanEnvName(name) ++ "_enable:-disable}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\([^}]+\\):version}%"), name => "${" ++ cleanEnvName(name) ++ "_version}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\([^}]+\\):bin}%"), name => "${" ++ cleanEnvName(name) ++ ".bin}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\([^}]+\\):share}%"), name => "${" ++ cleanEnvName(name) ++ ".share}")
+    |> replaceGroupWithTransform(Str.regexp("%{\\([^}]+\\):lib}%"), name => "${" ++ cleanEnvName(name) ++ ".lib}")
   ;
   List.fold_left(
     (string, (name, res)) => {
