@@ -6,11 +6,12 @@
   "license": "MIT",
   "scripts": {
     "watch": "esy b && esy jbuilder exec esyi ../testing",
-    "watcher": "watchexec -w lib -w bin npm run watch -- -s"
+    "watcher": "watchexec -w lib -w bin npm run watch -- -s",
+    "rebuild": "esy ocamllex lib/NpmLexer.mll && esy menhir lib/NpmParser.mly"
   },
   "esy": {
     "build": [
-      "jbuilder build"
+      ["jbuilder", "build"]
     ],
     "install": [
       "esy-installer"
@@ -31,6 +32,8 @@
   },
   "buildDependencies": {
     "@opam/jbuilder": "^1.0.0-beta16",
+    "@opam/menhir": "*",
+    "@opam/ocamllex": "*",
     "@esy-ocaml/esy-installer": "^0.0.0"
   },
   "peerDependencies": {
@@ -38,6 +41,7 @@
   },
   "devDependencies": {
     "@opam/merlin": "^3.0.5",
+    "@opam/alcotest": "*",
     "ocaml": "~4.6.000"
   },
   "private": true
