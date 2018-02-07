@@ -1,4 +1,5 @@
 
+[@deriving yojson]
 type concrete = (int, int, int, option(string));
 
 type raw = [

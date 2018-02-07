@@ -1,10 +1,32 @@
 
+[@deriving yojson]
 type alpha = Alpha(string, option(num))
 and num = Num(int, option(alpha));
 
+[@deriving yojson]
 type concrete = alpha;
 
+[@deriving yojson]
 type range = GenericVersion.range(concrete);
+
+let fromNpmConcrete = ((major, minor, patch, rest)) => {
+  Alpha("",
+    Some(
+      Num(major, Some(Alpha(".", Some(
+        Num(minor, Some(Alpha(".", Some(
+          Num(patch, switch rest {
+          | None => None
+          | Some(rest) => Some(Alpha(rest, None))
+          })
+        ))))
+      ))))
+    )
+  )
+};
+
+let triple = (major, minor, patch) => {
+  fromNpmConcrete((major, minor, patch, None))
+};
 
 let rec getNums = (text, pos) => {
   if (pos < String.length(text)) {
@@ -50,7 +72,10 @@ let parseConcrete = text => {
     }
     }
   };
-  getString(0)
+  switch (getString(0)) {
+  | None => Alpha("", None)
+  | Some(a) => a
+  }
 };
 
 let fromPrefix = (op, version) => {
@@ -76,6 +101,10 @@ let rec parseRange = opamvalue => {
   }
   | Logop(_, `Or, left, right) => Or(parseRange(left), parseRange(right))
   | String(_, version) => Exactly(parseConcrete(version))
+  | Option(_, contents, options) => {
+    print_endline("Ignoring option: " ++ (options |> List.map(OpamPrinter.value) |> String.concat(" .. ")));
+    parseRange(contents)
+  }
   | y => {
     print_endline("Unexpected option -- pretending its any " ++
     OpamPrinter.value(opamvalue));
@@ -88,12 +117,15 @@ let toDep = opamvalue => {
   open OpamParserTypes;
   open GenericVersion;
   switch opamvalue {
-  | String(_, name) => (name, Any, false, false)
-  | Option(_, String(_, name), [Ident(_, "build")]) => (name, Any, true, false)
-  | Option(_, String(_, name), [Logop(_, `And, Ident(_, "build"), version)]) => (name, parseRange(version), true, false)
-  | Option(_, String(_, name), [Ident(_, "test")]) => (name, Any, false, true)
-  | Option(_, String(_, name), [Logop(_, `And, Ident(_, "test"), version)]) => (name, parseRange(version), false, true)
-  | Option(_, String(_, name), [option]) => (name, parseRange(option), false, false)
+  | String(_, name) => (name, Any, `Link)
+  | Option(_, String(_, name), [Ident(_, "build")]) => (name, Any, `Build)
+  | Option(_, String(_, name), [Logop(_, `And, Ident(_, "build"), version)]) => (name, parseRange(version), `Build)
+  | Option(_, String(_, name), [Ident(_, "test")]) => (name, Any, `Test)
+  | Option(_, String(_, name), [Logop(_, `And, Ident(_, "test"), version)]) => (name, parseRange(version), `Test)
+  | Option(_, String(_, name), [option]) => {
+    print_endline("Ignoring option: " ++ OpamPrinter.value(option));
+    (name, parseRange(option), `Link)
+  }
   | _ => {
     failwith("Can't parse this opam dep " ++ OpamPrinter.value(opamvalue))
   }
@@ -124,3 +156,19 @@ let rec compare = (Alpha(a, na), Alpha(b, nb)) => {
     a - b
   }
 };
+
+let rec viewAlpha = (Alpha(a, na)) => {
+  switch na {
+  | None => a
+  | Some(b) => a ++ viewNum(b)
+  }
+} and viewNum = (Num(a, na)) => {
+  string_of_int(a) ++ switch na {
+  | None => ""
+  | Some(a) => viewAlpha(a)
+  }
+};
+
+let matches = GenericVersion.matches(compare);
+
+let viewRange = GenericVersion.view(viewAlpha);

@@ -38,7 +38,7 @@ type manifest = {
 /* TODO parse an opam file into this manifest format */
 /* Then parse our fancy override json or yaml thing... I think? */
 
-type thinManifest = (string, string, string, VersionNumber.versionNumber);
+type thinManifest = (string, string, string, OpamVersion.concrete);
 
 let rec findVariable = (name, items) => switch items {
 | [] => None
@@ -55,7 +55,7 @@ let opName = op => switch op {
   | `Gt => ">"
 };
 
-let fromPrefix = (op, version) => {
+/* let fromPrefix = (op, version) => {
   let v = VersionNumber.versionNumberNumber(version);
   switch op {
   | `Eq => Semver.Exactly(v)
@@ -65,7 +65,7 @@ let fromPrefix = (op, version) => {
   | `Gt => GreaterThan(v)
   | `Neq => failwith("Unexpected prefix op for version " ++ opName(op) ++ " " ++ version)
   }
-};
+}; */
 
 let withScope = name => "@opam/" ++ name;
 
@@ -78,7 +78,8 @@ let withoutScope = fullName => {
 };
 
 let toDep = opamvalue => {
-  let (name, s) = switch opamvalue {
+  let (name, s, typ) = OpamVersion.toDep(opamvalue);
+  /* let (name, s) = switch opamvalue {
   | String(_, name) => (name, Semver.Any)
   | Option(_, String(_, name), [Prefix_relop(_, op, String(_, version))]) => (name, fromPrefix(op, version))
   | Option(_, String(_, name), [y]) => {
@@ -89,8 +90,8 @@ let toDep = opamvalue => {
   | _ => {
     failwith("Can't parse this opam dep " ++ OpamPrinter.value(opamvalue))
   }
-  };
-  (withScope(name), s)
+  }; */
+  (withScope(name), s, typ)
 };
 
 let processDeps = deps => {
@@ -101,9 +102,7 @@ let processDeps = deps => {
   | _ => failwith("Can't handle the dependencies")
   };
 
-  List.fold_left(
-    ((deps, buildDeps, devDeps), dep) => {
-      try (switch dep {
+      /* try (switch dep {
       /* This doesn't cover the case where there's an OR that has "test" on each side */
       | Option(_, value, [Ident(_, "build")]) => (deps, [toDep(value), ...buildDeps], devDeps)
       | Option(_, value, [Ident(_, "test")]) => (deps, buildDeps, [toDep(value), ...devDeps])
@@ -119,6 +118,15 @@ let processDeps = deps => {
           print_endline("Bailing on a dep " ++ message);
           (deps, buildDeps, devDeps)
         }
+      } */
+
+  List.fold_left(
+    ((deps, buildDeps, devDeps), dep) => {
+      let (name, dep, typ) = toDep(dep);
+      switch typ {
+      | `Link => ([(name, dep), ...deps], buildDeps, devDeps)
+      | `Build => (deps, [(name, dep), ...buildDeps], devDeps)
+      | `Test => (deps, buildDeps, [(name, dep), ...devDeps])
       }
     },
     ([], [], []),
@@ -313,8 +321,8 @@ let parseManifest = (info, {file_contents, file_name}) => {
     files,
     deps: (deps |> List.map(toDepSource)) @ [
       /* HACK? Not sure where/when this should be specified */
-      ("@esy-ocaml/substs", Npm(Semver.Any)),
-      ("@esy-ocaml/esy-installer", Npm(Semver.Any))
+      ("@esy-ocaml/substs", Npm(GenericVersion.Any)),
+      ("@esy-ocaml/esy-installer", Npm(GenericVersion.Any))
     ],
     buildDeps: buildDeps |> List.map(toDepSource),
     devDeps: devDeps |> List.map(toDepSource),

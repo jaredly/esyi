@@ -15,7 +15,7 @@ let getFromNpmRegistry = name => {
     }
     | `Assoc(items) => {
       List.map(
-        ((name, json)) => (VersionNumber.versionNumberNumber(name), json),
+        ((name, json)) => (NpmVersion.parseConcrete(name), json),
         items
       )
     }
@@ -36,14 +36,9 @@ let getFromOpamRegistry = (config, fullName) => {
     List.map(
       entry => {
         let semver = switch (String.split_on_char('.', entry)) {
-        | [] | [_] => (0, 0, 0, None)
+        | [] | [_] => OpamVersion.Alpha("", None)
         | [_name, ...items] => {
-          try (VersionNumber.handleVersionNumberParts(items)) {
-          | _ => {
-            print_endline("Can't handle the version for " ++ name ++ ": " ++ entry);
-            (0, 0, 0, Some(String.concat(".", items)))
-          }
-          }
+          OpamVersion.parseConcrete(String.concat(".", items))
         }
         };
         (semver,

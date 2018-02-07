@@ -152,19 +152,29 @@ let module ParseName = {
   also this one https://github.com/esy/esy-install/blob/master/src/resolvers/exotics/opam-resolver/opam-repository.js */
 
   let parseDirectoryName = (name) => {
-    open Semver;
+    open GenericVersion;
     switch (String.split_on_char('.', name)) {
     | [] => assert(false)
-    | [single] => (single, Semver.Any)
+    | [single] => (single, Any)
     | [name, num, "x", "x" | "x-"] => {
-      (name, Semver.UpToMajor((int_of_string(num), 0, 0, None)))
+      (name,
+        And(
+          AtLeast(OpamVersion.triple(int_of_string(num), 0, 0)),
+          LessThan(OpamVersion.triple(int_of_string(num) + 1, 0, 0))
+        )
+      )
     }
     | [name, num, minor, "x" | "x-"] => {
-      (name, Semver.UpToMinor((int_of_string(stripDash(num)), int_of_string(minor), 0, None)))
+      (name,
+        And(
+          AtLeast(OpamVersion.triple(int_of_string(num), int_of_string(minor), 0)),
+          LessThan(OpamVersion.triple(int_of_string(num), int_of_string(minor) + 1, 0))
+        )
+      )
     }
     | [name, major, minor, patch] => {
       let (prefix, major) = prefix(major);
-      let version = (int_of_string(major), int_of_string(minor), int_of_string(patch), None);
+      let version = OpamVersion.triple(int_of_string(major), int_of_string(minor), int_of_string(patch));
       (name, switch prefix {
       | None => Exactly(version)
       | Some(">") => GreaterThan(version)
@@ -211,7 +221,7 @@ let getOverrides = (checkoutDir) => {
 let findApplicableOverride = (overrides, name, version) => {
   let rec loop = fun
   | [] => None
-  | [(oname, semver, fullPath), ..._] when name == oname && Semver.matches(version, semver) => Some(getContents(fullPath))
+  | [(oname, semver, fullPath), ..._] when name == oname && OpamVersion.matches(semver, version) => Some(getContents(fullPath))
   | [_, ...rest] => loop(rest);
   loop(overrides)
 };

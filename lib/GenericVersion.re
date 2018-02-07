@@ -1,4 +1,5 @@
 
+[@deriving yojson]
 type range('inner) =
   | Or(range('inner), range('inner))
   | And(range('inner), range('inner))
@@ -20,5 +21,31 @@ let rec matches = (compareInner, range, concrete) => {
   | AtMost(a) => compareInner(a, concrete) >= 0
   | And(a, b) => matches(compareInner, a, concrete) && matches(compareInner, b, concrete)
   | Or(a, b) => matches(compareInner, a, concrete) || matches(compareInner, b, concrete)
+  }
+};
+
+let rec view = (viewInner, range) => {
+  switch range {
+  | Exactly(a) => viewInner(a)
+  | Any => "*"
+  | GreaterThan(a) => "> " ++ viewInner(a)
+  | AtLeast(a) => ">= " ++ viewInner(a)
+  | LessThan(a) => "< " ++ viewInner(a)
+  | AtMost(a) => "<= " ++ viewInner(a)
+  | And(a, b) => view(viewInner, a) ++ " && " ++ view(viewInner, b)
+  | Or(a, b) => view(viewInner, a) ++ " || " ++ view(viewInner, b)
+  }
+};
+
+let rec map = (transform, range) => {
+  switch range {
+  | Exactly(a) => Exactly(transform(a))
+  | Any => Any
+  | GreaterThan(a) => GreaterThan(transform(a))
+  | AtLeast(a) => AtLeast(transform(a))
+  | LessThan(a) => LessThan(transform(a))
+  | AtMost(a) => AtMost(transform(a))
+  | And(a, b) => And(map(transform, a), map(transform, b))
+  | Or(a, b) => Or(map(transform, a), map(transform, b))
   }
 };

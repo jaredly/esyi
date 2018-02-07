@@ -9,8 +9,8 @@ Printexc.record_backtrace(true);
 let satisfies = (realVersion, req) => {
   switch (req, realVersion) {
   | (Types.Github(source), `Github(source_)) when source == source_ => true
-  | (Npm(semver), `Npm(s)) when Semver.matches(s, semver) => true
-  | (Opam(semver), `Opam(s)) when Semver.matches(s, semver) => true
+  | (Npm(semver), `Npm(s)) when NpmVersion.matches(semver, s) => true
+  | (Opam(semver), `Opam(s)) when OpamVersion.matches(semver, s) => true
   | _ => false
   }
 };
@@ -18,20 +18,20 @@ let satisfies = (realVersion, req) => {
 let sortRealVersions = (a, b) => {
   switch (a, b) {
   | (`Github(a), `Github(b)) => 0
-  | (`Npm(a), `Npm(b)) => VersionNumber.compareVersionNumbers(a, b)
-  | (`Opam(a), `Opam(b)) => VersionNumber.compareVersionNumbers(a, b)
+  | (`Npm(a), `Npm(b)) => NpmVersion.compare(a, b)
+  | (`Opam(a), `Opam(b)) => OpamVersion.compare(a, b)
   | _ => 0
   }
 };
 
 type cache = {
   config: Types.config,
-  opamOverrides: list((string, Semver.semver, string)),
+  opamOverrides: list((string, OpamVersion.range, string)),
   npmPackages: Hashtbl.t(string, Yojson.Basic.json),
   opamPackages: Hashtbl.t(string, OpamFile.manifest),
   allBuildDeps: Hashtbl.t(string, list((Lockfile.realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
-  availableNpmVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, Yojson.Basic.json))),
-  availableOpamVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, OpamFile.thinManifest))),
+  availableNpmVersions: Hashtbl.t(string, list((NpmTypes.concrete, Yojson.Basic.json))),
+  availableOpamVersions: Hashtbl.t(string, list((OpamVersion.concrete, OpamFile.thinManifest))),
   manifests: Hashtbl.t((string, Lockfile.realVersion), (manifest, list(Types.dep), list(Types.dep))),
 };
 
@@ -90,9 +90,9 @@ let getAvailableVersions = (cache, (name, source)) => {
     };
     let available = Hashtbl.find(cache.availableNpmVersions, name);
     available
-    |> List.sort(((va, _), (vb, _)) => VersionNumber.compareVersionNumbers(va, vb))
+    |> List.sort(((va, _), (vb, _)) => NpmVersion.compare(va, vb))
     |> List.mapi((i, (v, j)) => (v, j, i))
-    |> List.filter(((version, json, i)) => Semver.matches(version, semver))
+    |> List.filter(((version, json, i)) => NpmVersion.matches(semver, version))
     |> List.map(((version, json, i)) => `Npm(version, json, i));
   }
 
@@ -102,9 +102,9 @@ let getAvailableVersions = (cache, (name, source)) => {
     };
     let available = Hashtbl.find(cache.availableOpamVersions, name);
     available
-    |> List.sort(((va, _), (vb, _)) => VersionNumber.compareVersionNumbers(va, vb))
+    |> List.sort(((va, _), (vb, _)) => OpamVersion.compare(va, vb))
     |> List.mapi((i, (v, j)) => (v, j, i))
-    |> List.filter(((version, path, i)) => Semver.matches(version, semver))
+    |> List.filter(((version, path, i)) => OpamVersion.matches(semver, version))
     |> List.map(((version, path, i)) => `Opam(version, path, i));
   }
   | _ => []
