@@ -79,22 +79,10 @@ let withoutScope = fullName => {
 
 let toDep = opamvalue => {
   let (name, s, typ) = OpamVersion.toDep(opamvalue);
-  /* let (name, s) = switch opamvalue {
-  | String(_, name) => (name, Semver.Any)
-  | Option(_, String(_, name), [Prefix_relop(_, op, String(_, version))]) => (name, fromPrefix(op, version))
-  | Option(_, String(_, name), [y]) => {
-    print_endline("Unexpected option " ++ name ++ " -- pretending its any " ++
-    OpamPrinter.value(opamvalue));
-    (name, Any)
-  }
-  | _ => {
-    failwith("Can't parse this opam dep " ++ OpamPrinter.value(opamvalue))
-  }
-  }; */
   (withScope(name), s, typ)
 };
 
-let processDeps = deps => {
+let processDeps = (fileName, deps) => {
   let deps = switch (deps) {
   | None => []
   | Some(List(_, items)) => items
@@ -122,7 +110,13 @@ let processDeps = deps => {
 
   List.fold_left(
     ((deps, buildDeps, devDeps), dep) => {
-      let (name, dep, typ) = toDep(dep);
+      let (name, dep, typ) = try(toDep(dep)) {
+      | Failure(f) => {
+        print_endline("Failed to process dep: " ++ f);
+        print_endline(fileName);
+        failwith("bad")
+      }
+      };
       switch typ {
       | `Link => ([(name, dep), ...deps], buildDeps, devDeps)
       | `Build => (deps, [(name, dep), ...buildDeps], devDeps)
@@ -150,15 +144,23 @@ let variables = ((name, version)) => [
   ("share", "$cur__install/share"),
   ("pinned", "false"),
   ("name", name),
+  ("version", OpamVersion.viewAlpha(version)),
   ("prefix", "$cur__install"),
 ];
 
 let cleanEnvName = Str.global_replace(Str.regexp("-"), "_");
 
+[@test [
+  ((Str.regexp("a\\(.\\)"), String.uppercase, "apple"), "aPple"),
+  ((Str.regexp("a\\(.\\)"), String.lowercase, "HANDS"), "HAnDS"),
+]]
 let replaceGroupWithTransform = (rx, transform) => {
   Str.global_substitute(rx, s => transform(Str.matched_group(1, s)))
 };
 
+[@test [
+  ((("awesome", "1.0"), "--%{fmt:enable}-fmt"), "--${fmt_enable:-disable}-fmt")
+]]
 let replaceVariables = (info, string) => {
   let string = string
     |> replaceGroupWithTransform(Str.regexp("%{\\([^}]+\\):installed}%"), name => "${" ++ cleanEnvName(name) ++ "_installed:-false}")
@@ -264,7 +266,7 @@ let processStringList = item => {
   });
 };
 
-let findArchive = contents => {
+let findArchive = (contents, file_name) => {
   switch (findVariable("archive", contents)) {
   | Some(String(_, archive)) => archive
   | _ => {
@@ -273,15 +275,15 @@ let findArchive = contents => {
     | _ =>
     switch (findVariable("src", contents)) {
     | Some(String(_, archive)) => archive
-    | _ => failwith("Invalid url file - no archive")
+    | _ => failwith("Invalid url file - no archive: " ++ file_name)
     }
   }
   }
   }
 };
 
-let parseUrlFile = ({file_contents}) => {
-  let archive = findArchive(file_contents);
+let parseUrlFile = ({file_contents, file_name}) => {
+  let archive = findArchive(file_contents, file_name);
   switch (findVariable("checksum", file_contents)) {
   | Some(String(_, checksum)) => Some((archive, Some(checksum)))
   | _ => Some((archive, None))
@@ -304,9 +306,9 @@ let getOpamFiles = (opam_name) => {
 };
 
 let parseManifest = (info, {file_contents, file_name}) => {
-  let baseDir = Filename.dirname(file_name);
-  let (deps, buildDeps, devDeps) = processDeps(findVariable("depends", file_contents));
-  let (depopts, _, _) = processDeps(findVariable("depopts", file_contents));
+  /* let baseDir = Filename.dirname(file_name); */
+  let (deps, buildDeps, devDeps) = processDeps(file_name, findVariable("depends", file_contents));
+  let (depopts, _, _) = processDeps(file_name, findVariable("depopts", file_contents));
   let files = getOpamFiles(file_name);
   let patches = processStringList(findVariable("patches", file_contents));
   /** OPTIMIZE: only read the files when generating the lockfile */

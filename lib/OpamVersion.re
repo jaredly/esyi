@@ -28,6 +28,12 @@ let triple = (major, minor, patch) => {
   fromNpmConcrete((major, minor, patch, None))
 };
 
+[@test [
+  (("123abc", 0), 3),
+  (("a123abc", 1), 3),
+  (("abc", 1), 1),
+  (("abc", 3), 3),
+]]
 let rec getNums = (text, pos) => {
   if (pos < String.length(text)) {
     switch (text.[pos]) {
@@ -50,6 +56,10 @@ let rec getNonNums = (text, pos) => {
   }
 };
 
+[@test [
+  ("1.2.3", triple(1,2,3)),
+  ("1.2.3~alpha", fromNpmConcrete(1,2,3, Some("~alpha"))),
+]]
 let parseConcrete = text => {
   let len = String.length(text);
   let rec getNum = (pos) => {
@@ -122,6 +132,10 @@ let toDep = opamvalue => {
   | Option(_, String(_, name), [Logop(_, `And, Ident(_, "build"), version)]) => (name, parseRange(version), `Build)
   | Option(_, String(_, name), [Ident(_, "test")]) => (name, Any, `Test)
   | Option(_, String(_, name), [Logop(_, `And, Ident(_, "test"), version)]) => (name, parseRange(version), `Test)
+  | Group(_, [Logop(_, `Or, String(_, one), String(_, two))]) => {
+    print_endline("Arbitrarily choosing the second of two options: " ++ one ++ " and " ++ two);
+    (two, Any, `Link)
+  }
   | Option(_, String(_, name), [option]) => {
     print_endline("Ignoring option: " ++ OpamPrinter.value(option));
     (name, parseRange(option), `Link)
