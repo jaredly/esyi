@@ -30,7 +30,7 @@ let triple = (major, minor, patch) => {
 
 [@test [
   (("123abc", 0), 3),
-  (("a123abc", 1), 3),
+  (("a123abc", 1), 4),
   (("abc", 1), 1),
   (("abc", 3), 3),
 ]]
@@ -58,7 +58,7 @@ let rec getNonNums = (text, pos) => {
 
 [@test [
   ("1.2.3", triple(1,2,3)),
-  ("1.2.3~alpha", fromNpmConcrete(1,2,3, Some("~alpha"))),
+  ("1.2.3~alpha", fromNpmConcrete((1,2,3, Some("~alpha")))),
 ]]
 let parseConcrete = text => {
   let len = String.length(text);

@@ -27,6 +27,8 @@
     "@opam/ppx_deriving_yojson": "*",
     "@opam/mccs": "*",
     "lwt-node": "*",
+    "testre": "file:./../ppx_test/runtime",
+    "testre-ppx": "file:./../ppx_test/ppx",
     "@opam/opam-file-format": "*",
     "@opam/lwt": "^3.1.0"
   },
@@ -44,6 +46,9 @@
     "@opam/merlin": "^3.0.5",
     "@opam/alcotest": "*",
     "ocaml": "~4.6.000"
+  },
+    "resolutions": {
+    "**/@opam/result": "1.2.0"
   },
   "private": true
 }

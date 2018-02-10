@@ -151,15 +151,15 @@ let variables = ((name, version)) => [
 let cleanEnvName = Str.global_replace(Str.regexp("-"), "_");
 
 [@test [
-  ((Str.regexp("a\\(.\\)"), String.uppercase, "apple"), "aPple"),
-  ((Str.regexp("a\\(.\\)"), String.lowercase, "HANDS"), "HAnDS"),
+  ((Str.regexp("a\\(.\\)"), String.uppercase, "apple"), "Pple"),
+  ((Str.regexp("A\\(.\\)"), String.lowercase, "HANDS"), "HnDS"),
 ]]
-let replaceGroupWithTransform = (rx, transform) => {
-  Str.global_substitute(rx, s => transform(Str.matched_group(1, s)))
+let replaceGroupWithTransform = (rx, transform, string) => {
+  Str.global_substitute(rx, s => transform(Str.matched_group(1, s)), string)
 };
 
 [@test [
-  ((("awesome", "1.0"), "--%{fmt:enable}-fmt"), "--${fmt_enable:-disable}-fmt")
+  ((("awesome", OpamVersion.Alpha("", None)), "--%{fmt:enable}-fmt"), "--${fmt_enable:-disable}-fmt")
 ]]
 let replaceVariables = (info, string) => {
   let string = string
