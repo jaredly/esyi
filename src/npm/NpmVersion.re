@@ -1,10 +1,7 @@
 
 open NpmTypes;
 
-[@deriving yojson]
-type range = Shared.GenericVersion.range(concrete);
-
-let rawToConcrete = (raw: raw): concrete => {
+let rawToConcrete = (raw: raw): Shared.Types.npmConcrete => {
   switch raw {
   | `Exactly(c) => c
   | `UpToMinor(c) => c
@@ -13,11 +10,12 @@ let rawToConcrete = (raw: raw): concrete => {
   }
 };
 
-let rec rawToRange = (raw: raw): range => {
+let rec rawToRange = (raw: raw): Shared.Types.npmRange => {
   open Shared.GenericVersion;
   switch raw {
   | `Or(a, b) => Or(rawToRange(a), rawToRange(b))
   | `And(a, b) => And(rawToRange(a), rawToRange(b))
+  /* The real rules allow `AtMost` when all 3 parts are filled out */
   | `Between(a, b) => And(AtLeast(rawToConcrete(a)), LessThan(rawToConcrete(b)))
   | `LessThan(c) => LessThan(rawToConcrete(c))
   | `GreaterThan(c) => LessThan(rawToConcrete(c))
@@ -25,7 +23,10 @@ let rec rawToRange = (raw: raw): range => {
   | `AtLeast(c) => AtLeast(rawToConcrete(c))
   | `Exactly(c) => Exactly(c)
   /* TODO the rules here are more complicated. see https://docs.npmjs.com/misc/semver */
+  /* It shouldn't be *more* permissive than the actual rules, though. */
   | `UpToMinor((m, i, p, r)) => And(AtLeast((m, i, p, r)), LessThan((m, i + 1, 0, None)))
+  | `UpToMajor((0, 0, p, r)) => Exactly((0, 0, p, r))
+  | `UpToMajor((0, i, p, r)) => And(AtLeast((0, i, p, r)), LessThan((0, i + 1, 0, None)))
   | `UpToMajor((m, i, p, r)) => And(AtLeast((m, i, p, r)), LessThan((m + 1, 0, 0, None)))
   | `Any => Any
   }
@@ -33,10 +34,41 @@ let rec rawToRange = (raw: raw): range => {
 
 let parser = NpmParser.prog(NpmLexer.token);
 
+let viewConcrete = ((m, i, p, r)) => {
+  ([m, i, p] |> List.map(string_of_int) |> String.concat("."))
+  ++
+  switch r { | None => "" | Some(a) => "-" ++ a}
+};
+let viewRange = Shared.GenericVersion.view(viewConcrete);
+
+/**
+ * Tilde:
+ * Allows patch-level changes if a minor version is specified on the comparator.
+ * Allows minor-level changes if not.
+    ~1.2.3 := >=1.2.3 <1.(2+1).0 := >=1.2.3 <1.3.0
+    ~1.2 := >=1.2.0 <1.(2+1).0 := >=1.2.0 <1.3.0 (Same as 1.2.x)
+    ~1 := >=1.0.0 <(1+1).0.0 := >=1.0.0 <2.0.0 (Same as 1.x)
+    ~0.2.3 := >=0.2.3 <0.(2+1).0 := >=0.2.3 <0.3.0
+    ~0.2 := >=0.2.0 <0.(2+1).0 := >=0.2.0 <0.3.0 (Same as 0.2.x)
+    ~0 := >=0.0.0 <(0+1).0.0 := >=0.0.0 <1.0.0 (Same as 0.x)
+    ~1.2.3-beta.2 := >=1.2.3-beta.2 <1.3.0 Note that prereleases in the 1.2.3 version will be allowed, if they are greater than or equal to beta.2. So, 1.2.3-beta.4 would be allowed, but 1.2.4-beta.2 would not, because it is a prerelease of a different [major, minor, patch] tuple.
+
+ */
+
+[@test Shared.GenericVersion.([
+  ("1.2.3", Exactly((1,2,3,None))),
+  ("1.2.3-alpha2", Exactly((1,2,3,Some("alpha2")))),
+  ("1.2.3 - 2.3.4", And(AtLeast((1,2,3,None)), LessThan((2,3,4,None)))),
+])]
+[@test.print (fmt, v) => Format.fprintf(fmt, "%s", viewRange(v))]
 let parseRange = version => {
   try (rawToRange(parser(Lexing.from_string(version)))) {
-  | _ => {
-    print_endline("Invalid version! pretending its any: " ++ version);
+  | Failure(message) => {
+    print_endline("Failed with message: " ++ message ++ " : " ++ version);
+    Any
+  }
+  | e => {
+    print_endline("Invalid version! pretending its any: " ++ version ++ " " ++ Printexc.to_string(e));
     Any
   }
   }
@@ -100,11 +132,3 @@ let compare = ((ma, ia, pa, ra), (mb, ib, pb, rb)) => {
 };
 
 let matches = Shared.GenericVersion.matches(compare);
-
-let viewConcrete = ((m, i, p, r)) => {
-  ([m, i, p] |> List.map(string_of_int) |> String.concat("."))
-  ++
-  switch r { | None => "" | Some(a) => a}
-};
-
-let viewRange = Shared.GenericVersion.view(viewConcrete);

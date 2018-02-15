@@ -1,6 +1,8 @@
 
 let module Suites = {
-  include Lib.Main;
+  include Fetch;
+  include Solve;
+  include Npm.ParseNpm;
 };
 
 /* Src.Something.getNums("awe123", 1); */

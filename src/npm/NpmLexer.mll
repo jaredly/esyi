@@ -5,10 +5,13 @@
 }
 
 rule token = parse
-(* add the semicolon as a new token *)
-| ' ' { token lexbuf }
+| ' '+ { WHITE }
+| ['a'-'z']+ as i
+    { PART (i) }
 | ['0'-'9']+ as i
     { NUM (int_of_string i) }
+| '.'
+    { DOT }
 | 'x'
     { STAR }
 | 'X'

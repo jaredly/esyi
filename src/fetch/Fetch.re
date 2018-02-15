@@ -8,24 +8,13 @@ let consume = (fn, opt) => switch opt { | None => () | Some(x) => fn(x)};
 
 let expectSuccess = (msg, v) => if (v) { () } else { failwith(msg) };
 
+[@test [
+  (("/a/b/c", "/a/b/d"), "../d"),
+  (("/a/b/c", "/a/b/d/e"), "../d/e"),
+  (("/a/b/c", "/d/e/f"), "../../../d/e/f"),
+  (("/a/b/c", "/a/b/c/d/e"), "./d/e"),
+]]
 let relpath = (base, path) => {
-  /**
-   * /a/b/c/
-   * /a/b/d/
-   * ../d
-   *
-   * /a/b/c/
-   * /a/b/d/e/
-   * ../d/e
-   *
-   * /a/b/c/
-   * /d/e/f/
-   * ../../../d/e/f
-   *
-   * /a/b/c/
-   * /a/b/c/d/e/
-   * ./d/e/
-   */
   let rec loop = (bp, pp) => {
     switch (bp, pp) {
     | ([a, ...ra], [b, ...rb]) when a == b => loop(ra, rb)
@@ -34,7 +23,8 @@ let relpath = (base, path) => {
   };
   let (base, path) = loop(String.split_on_char('/', base), String.split_on_char('/', path));
   String.concat("/",
-  List.map((_) => "..", base) @ path
+  (base == [] ? ["."] : List.map((_) => "..", base))
+  @ path
   )
 };
 
@@ -52,8 +42,6 @@ let addResolvedFieldToPackageJson = (filename, name, version) => {
     ...json
   ]));
   Files.writeFile(filename, raw) |> expectSuccess("Could not write back package json");
-  /** TODO */
-  ()
 };
 
 let absname = (name, version) => {

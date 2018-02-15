@@ -8,6 +8,7 @@
 %token LTE
 %token HYPHEN
 %token OR
+%token WHITE
 %token TILDE
 %token CARET
 %token PLUS
@@ -20,20 +21,21 @@
 prog:
   | EOF       { `Any }
   | v = ranges; EOF { v }
-  | r = range; EOF { r }
   ;
 
-ranges: r = range; OR; r2 = ranges { `Or(r, r2) };
+ranges:
+  | r = range; WHITE; OR; WHITE; r2 = ranges { `Or(r, r2) }
+  | r = range { r };
 
 range:
   | h = hyphenated { h }
   | s = simples { s };
 
 simples:
-  | s = simple; tl = simples; { `And(s, tl) }
+  | s = simple; WHITE; tl = simples; { `And(s, tl) }
   | s = simple { s };
 
-hyphenated: fr = partial; HYPHEN; t = partial { `Between(fr, t) };
+hyphenated: fr = partial; WHITE; HYPHEN; WHITE; t = partial { `Between(fr, t) };
 
 simple:
   | p = primitive { p }

@@ -1,7 +1,4 @@
 
-[@deriving yojson]
-type concrete = (int, int, int, option(string));
-
 type raw = [
   | `Any
   | `Or(raw, raw)
@@ -11,8 +8,8 @@ type raw = [
   | `AtMost(raw)
   | `GreaterThan(raw)
   | `AtLeast(raw)
-  | `Exactly(concrete)
-  | `UpToMinor(concrete)
-  | `UpToMajor(concrete)
+  | `Exactly(Shared.Types.npmConcrete)
+  | `UpToMinor(Shared.Types.npmConcrete)
+  | `UpToMajor(Shared.Types.npmConcrete)
 ];
 

@@ -2,6 +2,7 @@
 (* The type of tokens. *)
 
 type token = 
+  | WHITE
   | TILDE
   | STAR
   | PLUS

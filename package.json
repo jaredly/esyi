@@ -7,7 +7,8 @@
   "scripts": {
     "watch": "esy b && esy jbuilder exec esyi ../testing",
     "watcher": "watchexec -w lib -w bin npm run watch -- -s",
-    "rebuild": "esy ocamllex lib/NpmLexer.mll && esy menhir lib/NpmParser.mly"
+    "rebuild": "esy ocamllex src/npm/NpmLexer.mll && esy menhir --explain src/npm/NpmParser.mly",
+    "test": "esy jbuilder build test/Test.exe && esy jbuilder exec test/Test.exe"
   },
   "esy": {
     "build": [
