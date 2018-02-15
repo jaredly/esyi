@@ -1,7 +1,7 @@
 
 open NpmTypes;
 
-let rawToConcrete = (raw: raw): Shared.Types.npmConcrete => {
+/* let rawToConcrete = (raw: raw): Shared.Types.npmConcrete => {
   switch raw {
   | `Exactly(c) => c
   | `UpToMinor(c) => c
@@ -30,9 +30,7 @@ let rec rawToRange = (raw: raw): Shared.Types.npmRange => {
   | `UpToMajor((m, i, p, r)) => And(AtLeast((m, i, p, r)), LessThan((m + 1, 0, 0, None)))
   | `Any => Any
   }
-};
-
-let parser = NpmParser.prog(NpmLexer.token);
+}; */
 
 let viewConcrete = ((m, i, p, r)) => {
   ([m, i, p] |> List.map(string_of_int) |> String.concat("."))
@@ -52,17 +50,24 @@ let viewRange = Shared.GenericVersion.view(viewConcrete);
     ~0.2 := >=0.2.0 <0.(2+1).0 := >=0.2.0 <0.3.0 (Same as 0.2.x)
     ~0 := >=0.0.0 <(0+1).0.0 := >=0.0.0 <1.0.0 (Same as 0.x)
     ~1.2.3-beta.2 := >=1.2.3-beta.2 <1.3.0 Note that prereleases in the 1.2.3 version will be allowed, if they are greater than or equal to beta.2. So, 1.2.3-beta.4 would be allowed, but 1.2.4-beta.2 would not, because it is a prerelease of a different [major, minor, patch] tuple.
-
- */
+*/
 
 [@test Shared.GenericVersion.([
+  ("~1.2.3", parseRange(">=1.2.3 <1.3.0")),
+  ("~1.2", parseRange(">=1.2.0 <1.3.0")),
+  ("~1.2", parseRange("1.2.x")),
+  ("~1", parseRange(">=1.0.0 <2.0.0")),
+  ("~1", parseRange("1.x")),
+  ("~0.2.3", parseRange(">=0.2.3 <0.3.0")),
+  ("~0", parseRange("0.x")),
+
   ("1.2.3", Exactly((1,2,3,None))),
   ("1.2.3-alpha2", Exactly((1,2,3,Some("alpha2")))),
-  ("1.2.3 - 2.3.4", And(AtLeast((1,2,3,None)), LessThan((2,3,4,None)))),
+  ("1.2.3 - 2.3.4", And(AtLeast((1,2,3,None)), AtMost((2,3,4,None)))),
 ])]
 [@test.print (fmt, v) => Format.fprintf(fmt, "%s", viewRange(v))]
 let parseRange = version => {
-  try (rawToRange(parser(Lexing.from_string(version)))) {
+  try (ParseNpm.parse(version)) {
   | Failure(message) => {
     print_endline("Failed with message: " ++ message ++ " : " ++ version);
     Any

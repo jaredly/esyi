@@ -6,6 +6,8 @@ type partial = [
   | `Qualified(int, int, int, string)
 ];
 
+let viewRange = Shared.GenericVersion.view(Shared.Types.viewNpmConcrete);
+
 let sliceToEnd = (text, num) => String.sub(text, num, String.length(text) - num);
 
 let isint = v => try ({ignore(int_of_string(v)); true}) { | _ => false };
@@ -123,27 +125,42 @@ let parsePrimitive = item => switch (item.[0]) {
 | _ => failwith("Bad primitive")
 };
 
-/* let parseSimple = item => {
+let parseSimple = item => {
   switch (item.[0]) {
   | '~' => switch (parsePartial(sliceToEnd(item, 1))) {
-    | `Major(num) => And(AtLeast((num, 0, 0, None)), LessThan((num + 1, 0, 0, None)))
-    | `Minor(m, i) => And(AtLeast((m, i, 0, None)), LessThan((m, i + 1, 0, None)))
-    | `Patch(m, i, p) => And(AtLeast((m, i, p, None)), LessThan((m, i + 1, 0, None)))
-    | `Qualified(m, i, p, r) => And(AtLeast((m, i, p, r)), LessThan((m, i + 1, 0, None)))
+    | `Major(num, q) => And(AtLeast((num, 0, 0, q)), LessThan((num + 1, 0, 0, None)))
+    | `Minor(m, i, q) => And(AtLeast((m, i, 0, q)), LessThan((m, i + 1, 0, None)))
+    | `Patch(m, i, p, q) => And(AtLeast((m, i, p, q)), LessThan((m, i + 1, 0, None)))
+    | `AllStar => failwith("* cannot be tilded")
+    | `MajorStar(num) => And(AtLeast((num, 0, 0, None)), LessThan((num + 1, 0, 0, None)))
+    | `MinorStar(m, i) => And(AtLeast((m, i, 0, None)), LessThan((m, i + 1, 0, None)))
+    | `Raw(_) => failwith("Bad tilde")
     }
   | '^' => switch (parsePartial(sliceToEnd(item, 1))) {
-    | `Major(num) => And(AtLeast((num, 0, 0, None)), LessThan((num + 1, 0, 0, None)))
-    | `Minor(0, i) => And(AtLeast((0, i, 0, None)), LessThan((0, i + 1, 0, None)))
-    | `Minor(m, i) => And(AtLeast((m, i, 0, None)), LessThan((m + 1, 0, 0, None)))
-    | `Patch(0, 0, p) => And(AtLeast((0, 0, p, None)), LessThan((0, 0, p + 1, None)))
-    | `Patch(0, i, p) => And(AtLeast((0, i, p, None)), LessThan((0, i + 1, 0, None)))
-    | `Patch(m, i, p) => And(AtLeast((m, i, p, None)), LessThan((m + 1, 0, 0, None)))
-    | `Qualified(0, 0, p, r) => And(AtLeast((0, 0, p, r)), LessThan((0, 0, p + 1, None)))
-    | `Qualified(0, i, p, r) => And(AtLeast((0, i, p, r)), LessThan((0, i + 1, 0, None)))
-    | `Qualified(m, i, p, r) => And(AtLeast((m, i, p, r)), LessThan((m + 1, 0, 0, None)))
+    | `Major(num, q) => And(AtLeast((num, 0, 0, q)), LessThan((num + 1, 0, 0, None)))
+    | `Minor(0, i, q) => And(AtLeast((0, i, 0, q)), LessThan((0, i + 1, 0, None)))
+    | `Minor(m, i, q) => And(AtLeast((m, i, 0, q)), LessThan((m + 1, 0, 0, None)))
+    | `Patch(0, 0, p, q) => And(AtLeast((0, 0, p, q)), LessThan((0, 0, p + 1, None)))
+    | `Patch(0, i, p, q) => And(AtLeast((0, i, p, q)), LessThan((0, i + 1, 0, None)))
+    | `Patch(m, i, p, q) => And(AtLeast((m, i, p, q)), LessThan((m + 1, 0, 0, None)))
+    | `AllStar => failwith("* cannot be careted")
+    | `MajorStar(num) => And(AtLeast((num, 0, 0, None)), LessThan((num + 1, 0, 0, None)))
+    | `MinorStar(m, i) => And(AtLeast((m, i, 0, None)), LessThan((m + 1, i, 0, None)))
+    | `Raw(_) => failwith("Bad tilde")
     }
   | '>' | '<' | '=' => parsePrimitive(item)
-  | _ => parsePartial(item)
+  | _ => switch(parsePartial(item)) {
+    | `AllStar => Any
+    /* TODO maybe handle the qualifier */
+    | `Major(m, Some(x)) => Exactly((m, 0, 0, Some(x)))
+    | `Major(m, None)
+    | `MajorStar(m) => And(AtLeast((m, 0, 0, None)), LessThan((m + 1, 0, 0, None)))
+    | `Minor(m, i, Some(x)) => Exactly((m, i, 0, Some(x)))
+    | `Minor(m, i, None)
+    | `MinorStar(m, i) => And(AtLeast((m, i, 0, None)), LessThan((m, i + 1, 0, None)))
+    | `Patch(m, i, p, q) => Exactly((m, i, p, q))
+    | `Raw(text) => Exactly((0, 0, 0, Some(text)))
+  }
   }
 };
 
@@ -151,26 +168,56 @@ let parseSimples = item => {
   let items = String.split_on_char(' ', item);
   let rec loop = items => switch items {
   | [item] => parseSimple(item)
-  | [item, ...items] => `And(parseSimple(item), loop(items))
+  | [item, ...items] => And(parseSimple(item), loop(items))
+  | [] => assert(false)
   };
   loop(items)
 };
 
+[@test Shared.GenericVersion.([
+  ("1.2.3", Exactly((1,2,3,None))),
+  ("1.2.3-alpha2", Exactly((1,2,3,Some("alpha2")))),
+  ("1.2.3 - 2.3.4", And(AtLeast((1,2,3,None)), AtMost((2,3,4,None)))),
+  ("1.2.3 - 2.3", And(AtLeast((1,2,3,None)), LessThan((2,4,0,None)))),
+])]
+[@test.print (fmt, v) => Format.fprintf(fmt, "%s", viewRange(v))]
 let parseRange = simple => {
-  let items = Str.split(Str.regexp(" +- +"));
+  let items = Str.split(Str.regexp(" +- +"), simple);
   switch items {
   | [item] => parseSimples(item)
-  /* TODO fix this */
-  | [left, right] => And(AtLeast(parsePartial(left)), AtMost(parsePartial(right)))
+  | [left, right] => {
+    let left = AtLeast(parsePartial(left) |> exactPartial);
+    let right = switch (parsePartial(right)) {
+      | `AllStar => Any
+      /* TODO maybe handle the qualifier */
+      | `Major(m, _)
+      | `MajorStar(m) => LessThan((m + 1, 0, 0, None))
+      | `Minor(m, i, _)
+      | `MinorStar(m, i) => LessThan((m, i + 1, 0, None))
+      | `Patch(m, i, p, q) => AtMost((m, i, p, q))
+      | `Raw(text) => LessThan((0, 0, 0, Some(text)))
+    };
+    And(left, right)
+  }
   | _ => failwith("Invalid range")
   }
 };
 
+[@test Shared.GenericVersion.([
+  ("1.2.3", Exactly((1,2,3,None))),
+  ("1.2.3-alpha2", Exactly((1,2,3,Some("alpha2")))),
+  ("1.2.3 - 2.3.4", And(AtLeast((1,2,3,None)), AtMost((2,3,4,None)))),
+  ("1.2.3 - 2.3 || 5.x", Or(And(AtLeast((1,2,3,None)), LessThan((2,4,0,None))), And(AtLeast((5, 0, 0, None)), LessThan((6, 0, 0, None))))),
+])]
+[@test.print (fmt, v) => Format.fprintf(fmt, "%s", viewRange(v))]
 let parseOrs = version => {
   let items = Str.split(Str.regexp(" +|| +"), version);
   let rec loop = items => switch items {
+  | [] => assert(false)
   | [item] => parseRange(item)
-  | [item, ...items] => `Or(parseRange(item), loop(items))
+  | [item, ...items] => Or(parseRange(item), loop(items))
   };
   loop(items)
-}; */
+};
+
+let parse = parseOrs;
