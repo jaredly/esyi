@@ -1,4 +1,5 @@
 
+open Shared;
 open OpamParserTypes;
 open OpamOverrides.Infix;
 
@@ -38,7 +39,7 @@ type manifest = {
 /* TODO parse an opam file into this manifest format */
 /* Then parse our fancy override json or yaml thing... I think? */
 
-type thinManifest = (string, string, string, OpamVersion.concrete);
+type thinManifest = (string, string, string, Shared.Types.opamConcrete);
 
 let rec findVariable = (name, items) => switch items {
 | [] => None
@@ -159,7 +160,7 @@ let replaceGroupWithTransform = (rx, transform, string) => {
 };
 
 [@test [
-  ((("awesome", OpamVersion.Alpha("", None)), "--%{fmt:enable}%-fmt"), "--${fmt_enable:-disable}-fmt")
+  ((("awesome", Shared.Types.Alpha("", None)), "--%{fmt:enable}%-fmt"), "--${fmt_enable:-disable}-fmt")
 ]]
 let replaceVariables = (info, string) => {
   let string = string
@@ -336,7 +337,7 @@ let parseManifest = (info, {file_contents, file_name}) => {
 };
 
 let parseDepVersion = ((name, version)) => {
-  PackageJson.parseNpmSource((name, version))
+  Npm.PackageJson.parseNpmSource((name, version))
 };
 
 module StrSet = Set.Make(String);

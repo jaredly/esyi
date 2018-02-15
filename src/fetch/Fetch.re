@@ -1,4 +1,7 @@
 
+open Shared;
+open Opam;
+
 let (/+) = Filename.concat;
 
 let consume = (fn, opt) => switch opt { | None => () | Some(x) => fn(x)};
@@ -141,7 +144,7 @@ let rec fetchDep = (opamOverrides, modcache, cache, {Lockfile.name, version} as 
 };
 
 let fetch = (config, basedir, lockfile) => {
-  let opamOverrides = OpamOverrides.getOverrides(config.Types.esyOpamOverrides);
+  let opamOverrides = Opam.OpamOverrides.getOverrides(config.Types.esyOpamOverrides);
   let cache = basedir /+ ".esy-cache" /+ "archives";
   Files.mkdirp(cache);
 

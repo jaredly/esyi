@@ -2,7 +2,7 @@
 open NpmTypes;
 
 [@deriving yojson]
-type range = GenericVersion.range(concrete);
+type range = Shared.GenericVersion.range(concrete);
 
 let rawToConcrete = (raw: raw): concrete => {
   switch raw {
@@ -14,7 +14,7 @@ let rawToConcrete = (raw: raw): concrete => {
 };
 
 let rec rawToRange = (raw: raw): range => {
-  open GenericVersion;
+  open Shared.GenericVersion;
   switch raw {
   | `Or(a, b) => Or(rawToRange(a), rawToRange(b))
   | `And(a, b) => And(rawToRange(a), rawToRange(b))
@@ -99,7 +99,7 @@ let compare = ((ma, ia, pa, ra), (mb, ib, pb, rb)) => {
   )
 };
 
-let matches = GenericVersion.matches(compare);
+let matches = Shared.GenericVersion.matches(compare);
 
 let viewConcrete = ((m, i, p, r)) => {
   ([m, i, p] |> List.map(string_of_int) |> String.concat("."))
@@ -107,4 +107,4 @@ let viewConcrete = ((m, i, p, r)) => {
   switch r { | None => "" | Some(a) => a}
 };
 
-let viewRange = GenericVersion.view(viewConcrete);
+let viewRange = Shared.GenericVersion.view(viewConcrete);

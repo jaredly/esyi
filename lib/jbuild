@@ -1,6 +1,0 @@
-(jbuild_version 1)
-
-(library
- ((name lib)
-  (preprocess (pps (ppx_deriving_yojson testre-ppx ppx_driver)))
-  (libraries (lambda-term lwt str curl cudf yaml ppx_deriving_yojson.runtime mccs yojson opam-file-format))))

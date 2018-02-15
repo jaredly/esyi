@@ -1,5 +1,5 @@
 
-[@deriving yojson]
+/* [@deriving yojson]
 type alpha = Alpha(string, option(num))
 and num = Num(int, option(alpha));
 
@@ -7,25 +7,12 @@ and num = Num(int, option(alpha));
 type concrete = alpha;
 
 [@deriving yojson]
-type range = GenericVersion.range(concrete);
+type range = Shared.GenericVersion.range(concrete); */
 
-let fromNpmConcrete = ((major, minor, patch, rest)) => {
-  Alpha("",
-    Some(
-      Num(major, Some(Alpha(".", Some(
-        Num(minor, Some(Alpha(".", Some(
-          Num(patch, switch rest {
-          | None => None
-          | Some(rest) => Some(Alpha(rest, None))
-          })
-        ))))
-      ))))
-    )
-  )
-};
+open Shared.Types;
 
 let triple = (major, minor, patch) => {
-  fromNpmConcrete((major, minor, patch, None))
+  Shared.Types.opamFromNpmConcrete((major, minor, patch, None))
 };
 
 [@test [
@@ -58,7 +45,7 @@ let rec getNonNums = (text, pos) => {
 
 [@test [
   ("1.2.3", triple(1,2,3)),
-  ("1.2.3~alpha", fromNpmConcrete((1,2,3, Some("~alpha")))),
+  ("1.2.3~alpha", Shared.Types.opamFromNpmConcrete((1,2,3, Some("~alpha")))),
 ]]
 let parseConcrete = text => {
   let len = String.length(text);
@@ -89,7 +76,7 @@ let parseConcrete = text => {
 };
 
 let fromPrefix = (op, version) => {
-  open GenericVersion;
+  open Shared.GenericVersion;
   let v = parseConcrete(version);
   switch op {
   | `Eq => Exactly(v)
@@ -103,7 +90,7 @@ let fromPrefix = (op, version) => {
 
 let rec parseRange = opamvalue => {
   open OpamParserTypes;
-  open GenericVersion;
+  open Shared.GenericVersion;
   switch opamvalue {
   | Prefix_relop(_, op, String(_, version)) => fromPrefix(op, version)
   | Logop(_, `And, left, right) => {
@@ -125,7 +112,7 @@ let rec parseRange = opamvalue => {
 
 let toDep = opamvalue => {
   open OpamParserTypes;
-  open GenericVersion;
+  open Shared.GenericVersion;
   switch opamvalue {
   | String(_, name) => (name, Any, `Link)
   | Option(_, String(_, name), [Ident(_, "build")]) => (name, Any, `Build)
@@ -183,6 +170,6 @@ let rec viewAlpha = (Alpha(a, na)) => {
   }
 };
 
-let matches = GenericVersion.matches(compare);
+let matches = Shared.GenericVersion.matches(compare);
 
-let viewRange = GenericVersion.view(viewAlpha);
+let viewRange = Shared.GenericVersion.view(viewAlpha);

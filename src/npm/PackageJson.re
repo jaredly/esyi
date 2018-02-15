@@ -1,4 +1,5 @@
 open Cudf;
+open Shared;
 open Types;
 
 let getOpam = name => {
@@ -19,7 +20,7 @@ let startsWith = (value, needle) => String.length(value) > String.length(needle)
 
 let parseNpmSource = ((name, value)) => {
   switch (getOpam(name)) {
-  | Some(name) => (name, Opam(NpmVersion.parseRange(value) |> GenericVersion.map(OpamVersion.fromNpmConcrete)))
+  | Some(name) => (name, Opam(NpmVersion.parseRange(value) |> GenericVersion.map(Shared.Types.opamFromNpmConcrete)))
   | None => {
     (name,
       if (isGithub(value)) {

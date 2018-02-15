@@ -60,8 +60,8 @@
 [@deriving yojson]
 type realVersion = [
   | `Github(string)
-  | `Npm(NpmTypes.concrete)
-  | `Opam(OpamVersion.concrete)
+  | `Npm(Types.npmConcrete)
+  | `Opam(Types.opamConcrete)
   | `Git(string)
 ];
 
@@ -100,15 +100,15 @@ and lockfile = {
 let viewRealVersion = v => switch v {
 | `Github(s) => "github-" ++ s
 | `Git(s) => "git-" ++ s
-| `Npm(t) => "npm-" ++ NpmVersion.viewConcrete(t)
-| `Opam(t) => "opam-" ++ OpamVersion.viewAlpha(t)
+| `Npm(t) => "npm-" ++ Types.viewNpmConcrete(t)
+| `Opam(t) => "opam-" ++ Types.viewOpamConcrete(t)
 };
 
 let plainVersionNumber = v => switch v {
 | `Github(s) => s
 | `Git(s) => s
-| `Npm(t) => NpmVersion.viewConcrete(t)
-| `Opam(t) => OpamVersion.viewAlpha(t)
+| `Npm(t) => Types.viewNpmConcrete(t)
+| `Opam(t) => Types.viewOpamConcrete(t)
 };
 
 

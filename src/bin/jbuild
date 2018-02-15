@@ -3,4 +3,4 @@
 (executable
  ((name esyi)
   (public_name esyi)
-  (libraries (lib ppx_deriving_yojson))))
+  (libraries (fetch solve ppx_deriving_yojson))))

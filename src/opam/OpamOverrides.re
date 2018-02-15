@@ -1,3 +1,4 @@
+open Shared;
 
 type opamSection = {
   url: option(string),
@@ -152,7 +153,7 @@ let module ParseName = {
   also this one https://github.com/esy/esy-install/blob/master/src/resolvers/exotics/opam-resolver/opam-repository.js */
 
   let parseDirectoryName = (name) => {
-    open GenericVersion;
+    open Shared.GenericVersion;
     switch (String.split_on_char('.', name)) {
     | [] => assert(false)
     | [single] => (single, Any)

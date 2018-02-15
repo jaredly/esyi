@@ -1,3 +1,6 @@
+open Opam;
+open Npm;
+open Shared;
 
 type manifest = [
   | `OpamFile(OpamFile.manifest)
@@ -26,12 +29,12 @@ let sortRealVersions = (a, b) => {
 
 type cache = {
   config: Types.config,
-  opamOverrides: list((string, OpamVersion.range, string)),
+  opamOverrides: list((string, Types.opamRange, string)),
   npmPackages: Hashtbl.t(string, Yojson.Basic.json),
   opamPackages: Hashtbl.t(string, OpamFile.manifest),
   allBuildDeps: Hashtbl.t(string, list((Lockfile.realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
-  availableNpmVersions: Hashtbl.t(string, list((NpmTypes.concrete, Yojson.Basic.json))),
-  availableOpamVersions: Hashtbl.t(string, list((OpamVersion.concrete, OpamFile.thinManifest))),
+  availableNpmVersions: Hashtbl.t(string, list((Types.npmConcrete, Yojson.Basic.json))),
+  availableOpamVersions: Hashtbl.t(string, list((Types.opamConcrete, OpamFile.thinManifest))),
   manifests: Hashtbl.t((string, Lockfile.realVersion), (manifest, list(Types.dep), list(Types.dep))),
 };
 
@@ -86,7 +89,7 @@ let getAvailableVersions = (cache, (name, source)) => {
   }
   | Npm(semver) => {
     if (!Hashtbl.mem(cache.availableNpmVersions, name)) {
-      Hashtbl.replace(cache.availableNpmVersions, name, Registry.getFromNpmRegistry(name));
+      Hashtbl.replace(cache.availableNpmVersions, name, Npm.Registry.getFromNpmRegistry(name));
     };
     let available = Hashtbl.find(cache.availableNpmVersions, name);
     available
@@ -98,7 +101,7 @@ let getAvailableVersions = (cache, (name, source)) => {
 
   | Opam(semver) => {
     if (!Hashtbl.mem(cache.availableOpamVersions, name)) {
-      Hashtbl.replace(cache.availableOpamVersions, name, Registry.getFromOpamRegistry(cache.config, name))
+      Hashtbl.replace(cache.availableOpamVersions, name, Opam.Registry.getFromOpamRegistry(cache.config, name))
     };
     let available = Hashtbl.find(cache.availableOpamVersions, name);
     available
@@ -116,7 +119,8 @@ let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
   switch (Hashtbl.find(cache, (name, realVersion))) {
   | exception Not_found => {
     let manifest = switch versionPlus {
-    | `Github(url) => Registry.getGithubManifest(url)
+    | `Github(url) =>  assert(false)
+    /* Registry.getGithubManifest(url) */
     | `Npm(version, json, _) => `PackageJson(json)
     | `Opam(version, path, _) => `OpamFile(OpamFile.getManifest(opamOverrides, path))
     };
