@@ -93,7 +93,7 @@ let getArchive = (json) => {
       | `String(checksum) => checksum
       | _ => failwith("Bad checksum")
       };
-      Some((archive, Some(checksum)))
+      Types.PendingSource.Archive(archive, Some(checksum))
     }
     | _ => failwith("bad dist")
     }

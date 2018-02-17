@@ -55,7 +55,8 @@ let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFi
   } else {
     Files.mkdirp(dest);
 
-    source |> consume(((url, _checksum)) => {
+    switch source {
+    | Types.Source.Archive(url, _checksum) => {
       let safe = Str.global_replace(Str.regexp("/"), "-", name);
       let withVersion = safe ++ Lockfile.viewRealVersion(version);
       let tarball = cache /+ withVersion ++ ".tarball";
@@ -63,7 +64,24 @@ let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFi
         ExecCommand.execSync(~cmd="curl -L --output "++ tarball ++ " " ++ url, ()) |> snd |> expectSuccess("failed to fetch with curl");
       };
       ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
-    });
+    }
+    | Types.Source.NoSource => ()
+    | Types.Source.GitSource(gitUrl, commit) => {
+      let safe = Str.global_replace(Str.regexp("/"), "-", name);
+      let withVersion = safe ++ Lockfile.viewRealVersion(version);
+      let tarball = cache /+ withVersion ++ ".tarball";
+      if (!Files.isFile(tarball)) {
+        let gitdest = cache /+ withVersion;
+        /** TODO we want to have the commit nailed down by this point tho */
+        ExecCommand.execSync(~cmd="git clone " ++ gitUrl ++ " " ++ gitdest, ()) |> snd |> expectSuccess("Unable to clone git repo " ++ gitUrl);
+        ExecCommand.execSync(~cmd="cd " ++ gitdest ++ " && git checkout " ++ commit ++ " && rm -rf .git", ()) |> snd |> expectSuccess("Unable to checkout " ++ gitUrl ++ " at " ++ commit);
+        ExecCommand.execSync(~cmd="tar czf " ++ tarball ++ " " ++ gitdest, ()) |> snd |> expectSuccess("Unable to tar up");
+        ExecCommand.execSync(~cmd="mv " ++ gitdest ++ " " ++ dest, ()) |> snd |> expectSuccess("Unable to move");
+      } else {
+        ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
+      }
+    }
+    };
 
     /* print_endline("Checking " ++ dest /+ "package.json"); */
     let packageJson = dest /+ "package.json";

@@ -18,7 +18,7 @@ type manifest = {
   peerDeps: list(Types.dep),
   optDependencies: list(Types.dep),
   /* TODO optDependencies (depopts) */
-  source: option((string, option(string))),
+  source: Types.PendingSource.t,
   /* TODO add name_installed n stuff */
   /*
       "ocamlfind_version": {
@@ -275,14 +275,14 @@ let processStringList = item => {
 
 let findArchive = (contents, file_name) => {
   switch (findVariable("archive", contents)) {
-  | Some(String(_, archive)) => archive
+  | Some(String(_, archive)) => Some(archive)
   | _ => {
     switch (findVariable("http", contents)) {
-    | Some(String(_, archive)) => archive
+    | Some(String(_, archive)) => Some(archive)
     | _ =>
     switch (findVariable("src", contents)) {
-    | Some(String(_, archive)) => archive
-    | _ => failwith("Invalid url file - no archive: " ++ file_name)
+    | Some(String(_, archive)) => Some(archive)
+    | _ => None
     }
   }
   }
@@ -290,10 +290,20 @@ let findArchive = (contents, file_name) => {
 };
 
 let parseUrlFile = ({file_contents, file_name}) => {
-  let archive = findArchive(file_contents, file_name);
-  switch (findVariable("checksum", file_contents)) {
-  | Some(String(_, checksum)) => Some((archive, Some(checksum)))
-  | _ => Some((archive, None))
+  switch (findArchive(file_contents, file_name)) {
+  | None => {
+      switch (findVariable("git", file_contents)) {
+      | Some(String(_, git)) => Types.PendingSource.GitSource(git, None /* TODO parse out commit info */)
+      | _ => failwith("Invalid url file - no archive: " ++ file_name)
+      }
+  }
+  | Some(archive) => {
+    let checksum = switch (findVariable("checksum", file_contents)) {
+    | Some(String(_, checksum)) => Some(checksum)
+    | _ => None
+    };
+    Types.PendingSource.Archive(archive, checksum)
+  }
   }
 };
 
@@ -337,7 +347,7 @@ let parseManifest = (info, {file_contents, file_name}) => {
     devDeps: devDeps |> List.map(toDepSource),
     peerDeps: [], /* TODO peer deps */
     optDependencies: depopts |> List.map(toDepSource),
-    source: None,
+    source: Types.PendingSource.NoSource,
     exportedEnv: [],
   };
 };
@@ -358,11 +368,7 @@ let assignAssoc = (target, override) => {
 
 module O = OpamOverrides;
 let mergeOverride = (manifest, override) => {
-  let source = override.O.opam |?> (opam => switch opam.O.url {
-    | Some(url) => Some((url, opam.O.checksum))
-    | None => None
-    }) |?? manifest.source;
-     /* |? manifest.source; */
+  let source = override.O.opam |?> (opam => opam.O.source) |? manifest.source;
   {
     ...manifest,
     build: override.O.build |? manifest.build,
@@ -378,7 +384,7 @@ let mergeOverride = (manifest, override) => {
 let getManifest = (opamOverrides, (opam, url, name, version)) => {
   let manifest = {
     ...parseManifest((name, version), OpamParser.file(opam)),
-    source: Files.exists(url) ? parseUrlFile(OpamParser.file(url)) : None
+    source: Files.exists(url) ? parseUrlFile(OpamParser.file(url)) : Types.PendingSource.NoSource
   };
   switch (OpamOverrides.findApplicableOverride(opamOverrides, name, version)) {
   | None => {

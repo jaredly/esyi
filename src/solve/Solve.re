@@ -58,6 +58,15 @@ let nextVersion = () => {
   versionTicker^
 };
 
+let getRealVersion = (versionCache, package) => {
+  switch (Hashtbl.find(versionCache, (package.Cudf.package, package.Cudf.version))) {
+  | exception Not_found => {
+    failwith("Tried to find a package that wasn't listed in the versioncache " ++ package.Cudf.package ++ " " ++ string_of_int(package.Cudf.version))
+  }
+  | version => version
+  };
+};
+
 let matchesSource = (source, versionCache, package) => {
   let version = switch (Hashtbl.find(versionCache, (package.Cudf.package, package.Cudf.version))) {
   | exception Not_found => {
@@ -71,14 +80,15 @@ let matchesSource = (source, versionCache, package) => {
 let cudfDep = (state, (name, source)) => {
   let available = Cudf.lookup_packages(state.universe, name);
   let num = List.length(available);
-  let available = available
+  let marching = available
   |> List.filter(matchesSource(source, state.lookupRealVersion))
   |> List.map(package => (package.Cudf.package, Some((`Eq, package.Cudf.version))));
-  if (available == []) {
+  if (marching == []) {
     print_endline("Opam semver wrong " ++ Types.viewReq(source));
+    available |> List.iter(package => print_endline(Lockfile.viewRealVersion(getRealVersion(state.lookupRealVersion, package))));
     failwith("No package found for " ++ name ++ " when converting to a cudf dep (started with " ++ string_of_int(num) ++ ")")
   } else {
-    available
+    marching
   }
 };
 
@@ -207,6 +217,21 @@ let makeRequest = (deps, state) => {
  *
  */
 
+let lockDownSource = pendingSource => switch pendingSource {
+| Types.PendingSource.NoSource => Types.Source.NoSource
+| Archive(url, None) => {
+  print_endline("Pretending to get a checksum for " ++ url);
+  Types.Source.Archive(url, "fake checksum")
+}
+| Archive(url, Some(checksum)) => Types.Source.Archive(url, checksum)
+| GitSource(url, None) => {
+  /** TODO getting HEAD */
+  "git ls-remote git://github.com/alainfrisch/ppx_tools.git HEAD";
+  Types.Source.GitSource(url, "HEAD")
+}
+| GitSource(url, Some(sha)) => Types.Source.GitSource(url, sha)
+};
+
 let rec solveDeps = (cache, deps) => {
   let state = {
     cache,
@@ -243,7 +268,7 @@ let rec solveDeps = (cache, deps) => {
         ([{
           Lockfile.name: p.Cudf.package,
           version: version,
-          source: Manifest.getArchive(manifest),
+          source: lockDownSource(Manifest.getArchive(manifest)),
           opamFile: getOpamFile(manifest),
           unpackedLocation: "",
           buildDeps: [],
@@ -348,7 +373,7 @@ let solve = (config, manifest) => {
         };
         ({
         Lockfile.name: key,
-        source: Manifest.getArchive(manifest),
+        source: lockDownSource(Manifest.getArchive(manifest)),
         opamFile: getOpamFile(manifest),
         version: realVersion,
         unpackedLocation: "",

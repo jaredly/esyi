@@ -35,7 +35,7 @@ let rec rawToRange = (raw: raw): Shared.Types.npmRange => {
 let viewConcrete = ((m, i, p, r)) => {
   ([m, i, p] |> List.map(string_of_int) |> String.concat("."))
   ++
-  switch r { | None => "" | Some(a) => "-" ++ a}
+  switch r { | None => "" | Some(a) => a}
 };
 let viewRange = Shared.GenericVersion.view(viewConcrete);
 
@@ -62,7 +62,7 @@ let viewRange = Shared.GenericVersion.view(viewConcrete);
   ("~0", parseRange("0.x")),
 
   ("1.2.3", Exactly((1,2,3,None))),
-  ("1.2.3-alpha2", Exactly((1,2,3,Some("alpha2")))),
+  ("1.2.3-alpha2", Exactly((1,2,3,Some("-alpha2")))),
   ("1.2.3 - 2.3.4", And(AtLeast((1,2,3,None)), AtMost((2,3,4,None)))),
 ])]
 [@test.print (fmt, v) => Format.fprintf(fmt, "%s", viewRange(v))]
@@ -110,9 +110,9 @@ let after = (a, prefix) => {
 let compareExtra = (a, b) => {
   switch (a, b) {
   | (Some(a), Some(b)) => {
-    switch (after(a, "beta"), after(b, "beta")) {
+    switch (after(a, "-beta"), after(b, "-beta")) {
     | (Some(a), Some(b)) => try(int_of_string(a) - int_of_string(b)) { | _ => compare(a, b) }
-    | _ => switch (after(a, "alpha"), after(b, "alpha")) {
+    | _ => switch (after(a, "-alpha"), after(b, "-alpha")) {
       | (Some(a), Some(b)) => try(int_of_string(a) - int_of_string(b)) { | _ => compare(a, b) }
       | _ => try(int_of_string(a) - int_of_string(b)) { | _ => compare(a, b) }
       }

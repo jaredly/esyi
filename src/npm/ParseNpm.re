@@ -19,13 +19,13 @@ let splitRest = value => {
   | [single] => switch (String.split_on_char('+', value)) {
     | [single] => switch (String.split_on_char('~', value)) {
       | [single] => (int_of_string(single), None)
-      | [single, ...rest] => (int_of_string(single), Some(String.concat("~", rest)))
+      | [single, ...rest] => (int_of_string(single), Some("~" ++ String.concat("~", rest)))
       | _ => (0, Some(value))
       }
-    | [single, ...rest] => (int_of_string(single), Some(String.concat("+", rest)))
+    | [single, ...rest] => (int_of_string(single), Some("+" ++ String.concat("+", rest)))
     | _ => (0, Some(value))
     }
-  | [single, ...rest] => (int_of_string(single), Some(String.concat("-", rest)))
+  | [single, ...rest] => (int_of_string(single), Some("-" ++ String.concat("-", rest)))
   | _ => (0, Some(value))
   }) {
     | _ => (0, Some(value))
@@ -60,9 +60,9 @@ let exactPartial = partial => switch partial {
   ("1.3.X", `MinorStar(1,3)),
   ("v1.3.*", `MinorStar(1,3)),
   ("1", `Major(1, None)),
-  ("1-beta.2", `Major(1, Some("beta.2"))),
-  ("1.2-beta.2", `Minor(1, 2, Some("beta.2"))),
-  ("1.4.23-alpha1", `Patch(1, 4, 23, Some("alpha1"))),
+  ("1-beta.2", `Major(1, Some("-beta.2"))),
+  ("1.2-beta.2", `Minor(1, 2, Some("-beta.2"))),
+  ("1.4.23-alpha1", `Patch(1, 4, 23, Some("-alpha1"))),
   ("1.2.3alpha2", `Patch(1,2,3, Some("alpha2"))),
   ("what", `Raw("what")),
 ]]
@@ -75,7 +75,7 @@ let parsePartial = version => {
   | [major, "*" | "x" | "X", ...rest] when isint(major) => `MajorStar(int_of_string(major))
   | [major, minor, "*" | "x" | "X", ...rest] when isint(major) && isint(minor) => `MinorStar(int_of_string(major), int_of_string(minor))
   | _ => {
-    let rx = Str.regexp({|^\([0-9]+\)\(\.\([0-9]+\)\(\.\([0-9]+\)\)?\)?\([-+~]\([a-z0-9\.]+\)\)?|});
+    let rx = Str.regexp({|^\([0-9]+\)\(\.\([0-9]+\)\(\.\([0-9]+\)\)?\)?\(\([-+~][a-z0-9\.]+\)\)?|});
     switch (Str.search_forward(rx, version, 0)) {
       | exception Not_found => `Raw(version)
       | _ => {
@@ -176,7 +176,7 @@ let parseSimples = item => {
 
 [@test Shared.GenericVersion.([
   ("1.2.3", Exactly((1,2,3,None))),
-  ("1.2.3-alpha2", Exactly((1,2,3,Some("alpha2")))),
+  ("1.2.3-alpha2", Exactly((1,2,3,Some("-alpha2")))),
   ("1.2.3 - 2.3.4", And(AtLeast((1,2,3,None)), AtMost((2,3,4,None)))),
   ("1.2.3 - 2.3", And(AtLeast((1,2,3,None)), LessThan((2,4,0,None)))),
 ])]
@@ -205,7 +205,7 @@ let parseRange = simple => {
 
 [@test Shared.GenericVersion.([
   ("1.2.3", Exactly((1,2,3,None))),
-  ("1.2.3-alpha2", Exactly((1,2,3,Some("alpha2")))),
+  ("1.2.3-alpha2", Exactly((1,2,3,Some("-alpha2")))),
   ("1.2.3 - 2.3.4", And(AtLeast((1,2,3,None)), AtMost((2,3,4,None)))),
   ("1.2.3 - 2.3 || 5.x", Or(And(AtLeast((1,2,3,None)), LessThan((2,4,0,None))), And(AtLeast((5, 0, 0, None)), LessThan((6, 0, 0, None))))),
 ])]

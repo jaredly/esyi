@@ -1,8 +1,7 @@
 open Shared;
 
 type opamSection = {
-  url: option(string),
-  checksum: option(string),
+  source: option(Types.PendingSource.t),
   files: list((string, string)), /* relpath, contents */
   /* patches: list((string, string)) relpath, abspath */
 };
@@ -87,15 +86,18 @@ let module ProcessJson = {
     json
     |> (obj |.! "opam should be an object")
     |> items => {
-      url: items |> get("url") |?>> (str |.! "url should be a string"),
-      checksum: items |> get("checksum") |?>> (str |.! "url should be a string"),
+      let maybeArchiveSource = items |> get("url") |?>> (str |.! "url should be a string")
+        |?>> (url => Types.PendingSource.Archive(url, items |> get("checksum") |?>> (str |.! "checksum should be a string")));
+      let maybeGitSource = (items |> get("git") |?>> (str |.! "git should be a string") |?>> (git => Types.PendingSource.GitSource(git, None /* TODO parse out commit if there */)));
+      {
+      source: maybeArchiveSource |?? maybeGitSource,
       files: items |> get("files") |?>> (arr |.! "files must be an array") |? []
         |> List.map(obj |.! "files item must be an obj")
         |> List.map(items => (
           items |> get("name") |?>> (str |.! "name must be a str") |! "name required for files",
           items |> get("content") |?>> (str |.! "content must be a str") |! "content required for files"
         )),
-    }
+    }}
   };
 
   let process = json => {

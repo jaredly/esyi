@@ -69,7 +69,7 @@ type realVersion = [
 type solvedDep = {
   name: string,
   version: realVersion,
-  source: option((string, option(string))),
+  source: Types.Source.t,
   opamFile: option(string),
   unpackedLocation: string,
   buildDeps: list((string, realVersion)),
