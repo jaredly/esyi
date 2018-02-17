@@ -110,7 +110,7 @@ let rec parseRange = opamvalue => {
   }
 };
 
-let toDep = opamvalue => {
+let rec toDep = opamvalue => {
   open OpamParserTypes;
   open Shared.GenericVersion;
   switch opamvalue {
@@ -119,12 +119,15 @@ let toDep = opamvalue => {
   | Option(_, String(_, name), [Logop(_, `And, Ident(_, "build"), version)]) => (name, parseRange(version), `Build)
   | Option(_, String(_, name), [Ident(_, "test")]) => (name, Any, `Test)
   | Option(_, String(_, name), [Logop(_, `And, Ident(_, "test"), version)]) => (name, parseRange(version), `Test)
+  | Group(_, [Logop(_, `Or, String(_, "base-no-ppx"), otherThing)]) => {
+    /* yep we allow ppxs */
+    toDep(otherThing)
+  }
   | Group(_, [Logop(_, `Or, String(_, one), String(_, two))]) => {
     print_endline("Arbitrarily choosing the second of two options: " ++ one ++ " and " ++ two);
     (two, Any, `Link)
   }
   | Option(_, String(_, name), [option]) => {
-    print_endline("Ignoring option: " ++ OpamPrinter.value(option));
     (name, parseRange(option), `Link)
   }
   | _ => {

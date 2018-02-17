@@ -202,6 +202,7 @@ let processCommand = (info, items) => {
       None
     }
     | _ => {
+      /** TODO handle  "--%{text:enable}%-text" {"%{react:installed}%"} correctly */
       print_endline("Bad build arg " ++ OpamPrinter.value(item));
       None
     }
@@ -253,6 +254,7 @@ let processCommandList = (info, item) => {
   };
 };
 
+/** TODO handle "patch-ocsigen-lwt-101.diff" {os = "darwin"} correctly */
 let processStringList = item => {
   let items = switch(item) {
   | None => []
