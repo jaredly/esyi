@@ -1,3 +1,6 @@
+open Opam;
+open Npm;
+open Shared;
 
 type manifest = [
   | `OpamFile(OpamFile.manifest)
@@ -9,8 +12,8 @@ Printexc.record_backtrace(true);
 let satisfies = (realVersion, req) => {
   switch (req, realVersion) {
   | (Types.Github(source), `Github(source_)) when source == source_ => true
-  | (Npm(semver), `Npm(s)) when Semver.matches(s, semver) => true
-  | (Opam(semver), `Opam(s)) when Semver.matches(s, semver) => true
+  | (Npm(semver), `Npm(s)) when NpmVersion.matches(semver, s) => true
+  | (Opam(semver), `Opam(s)) when OpamVersion.matches(semver, s) => true
   | _ => false
   }
 };
@@ -18,20 +21,20 @@ let satisfies = (realVersion, req) => {
 let sortRealVersions = (a, b) => {
   switch (a, b) {
   | (`Github(a), `Github(b)) => 0
-  | (`Npm(a), `Npm(b)) => VersionNumber.compareVersionNumbers(a, b)
-  | (`Opam(a), `Opam(b)) => VersionNumber.compareVersionNumbers(a, b)
+  | (`Npm(a), `Npm(b)) => NpmVersion.compare(a, b)
+  | (`Opam(a), `Opam(b)) => OpamVersion.compare(a, b)
   | _ => 0
   }
 };
 
 type cache = {
   config: Types.config,
-  opamOverrides: list((string, Semver.semver, string)),
+  opamOverrides: list((string, Types.opamRange, string)),
   npmPackages: Hashtbl.t(string, Yojson.Basic.json),
   opamPackages: Hashtbl.t(string, OpamFile.manifest),
   allBuildDeps: Hashtbl.t(string, list((Lockfile.realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
-  availableNpmVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, Yojson.Basic.json))),
-  availableOpamVersions: Hashtbl.t(string, list((VersionNumber.versionNumber, OpamFile.thinManifest))),
+  availableNpmVersions: Hashtbl.t(string, list((Types.npmConcrete, Yojson.Basic.json))),
+  availableOpamVersions: Hashtbl.t(string, list((Types.opamConcrete, OpamFile.thinManifest))),
   manifests: Hashtbl.t((string, Lockfile.realVersion), (manifest, list(Types.dep), list(Types.dep))),
 };
 
@@ -55,6 +58,15 @@ let nextVersion = () => {
   versionTicker^
 };
 
+let getRealVersion = (versionCache, package) => {
+  switch (Hashtbl.find(versionCache, (package.Cudf.package, package.Cudf.version))) {
+  | exception Not_found => {
+    failwith("Tried to find a package that wasn't listed in the versioncache " ++ package.Cudf.package ++ " " ++ string_of_int(package.Cudf.version))
+  }
+  | version => version
+  };
+};
+
 let matchesSource = (source, versionCache, package) => {
   let version = switch (Hashtbl.find(versionCache, (package.Cudf.package, package.Cudf.version))) {
   | exception Not_found => {
@@ -65,17 +77,18 @@ let matchesSource = (source, versionCache, package) => {
   satisfies(version, source)
 };
 
-let cudfDep = (state, (name, source)) => {
+let cudfDep = (owner, state, (name, source)) => {
   let available = Cudf.lookup_packages(state.universe, name);
   let num = List.length(available);
-  let available = available
+  let marching = available
   |> List.filter(matchesSource(source, state.lookupRealVersion))
   |> List.map(package => (package.Cudf.package, Some((`Eq, package.Cudf.version))));
-  if (available == []) {
-    print_endline("Opam semver wrong " ++ Types.viewReq(source));
+  if (marching == []) {
+    print_endline("Opam semver wrong " ++ owner ++ " wants " ++ name ++ " at version " ++ Types.viewReq(source));
+    available |> List.iter(package => print_endline(Lockfile.viewRealVersion(getRealVersion(state.lookupRealVersion, package))));
     failwith("No package found for " ++ name ++ " when converting to a cudf dep (started with " ++ string_of_int(num) ++ ")")
   } else {
-    available
+    marching
   }
 };
 
@@ -86,25 +99,25 @@ let getAvailableVersions = (cache, (name, source)) => {
   }
   | Npm(semver) => {
     if (!Hashtbl.mem(cache.availableNpmVersions, name)) {
-      Hashtbl.replace(cache.availableNpmVersions, name, Registry.getFromNpmRegistry(name));
+      Hashtbl.replace(cache.availableNpmVersions, name, Npm.Registry.getFromNpmRegistry(name));
     };
     let available = Hashtbl.find(cache.availableNpmVersions, name);
     available
-    |> List.sort(((va, _), (vb, _)) => VersionNumber.compareVersionNumbers(va, vb))
+    |> List.sort(((va, _), (vb, _)) => NpmVersion.compare(va, vb))
     |> List.mapi((i, (v, j)) => (v, j, i))
-    |> List.filter(((version, json, i)) => Semver.matches(version, semver))
+    |> List.filter(((version, json, i)) => NpmVersion.matches(semver, version))
     |> List.map(((version, json, i)) => `Npm(version, json, i));
   }
 
   | Opam(semver) => {
     if (!Hashtbl.mem(cache.availableOpamVersions, name)) {
-      Hashtbl.replace(cache.availableOpamVersions, name, Registry.getFromOpamRegistry(cache.config, name))
+      Hashtbl.replace(cache.availableOpamVersions, name, Opam.Registry.getFromOpamRegistry(cache.config, name))
     };
     let available = Hashtbl.find(cache.availableOpamVersions, name);
     available
-    |> List.sort(((va, _), (vb, _)) => VersionNumber.compareVersionNumbers(va, vb))
+    |> List.sort(((va, _), (vb, _)) => OpamVersion.compare(va, vb))
     |> List.mapi((i, (v, j)) => (v, j, i))
-    |> List.filter(((version, path, i)) => Semver.matches(version, semver))
+    |> List.filter(((version, path, i)) => OpamVersion.matches(semver, version))
     |> List.map(((version, path, i)) => `Opam(version, path, i));
   }
   | _ => []
@@ -116,7 +129,8 @@ let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
   switch (Hashtbl.find(cache, (name, realVersion))) {
   | exception Not_found => {
     let manifest = switch versionPlus {
-    | `Github(url) => Registry.getGithubManifest(url)
+    | `Github(url) =>  assert(false)
+    /* Registry.getGithubManifest(url) */
     | `Npm(version, json, _) => `PackageJson(json)
     | `Opam(version, path, _) => `OpamFile(OpamFile.getManifest(opamOverrides, path))
     };
@@ -139,7 +153,7 @@ let rec addPackage = (name, realVersion, version, deps, buildDeps, state, manife
     package: name,
     version,
     conflicts: [(name, None)],
-    depends: List.map(cudfDep(state), deps)
+    depends: List.map(cudfDep(name, state), deps)
   };
   Cudf.add_package(state.universe, package);
 }
@@ -165,7 +179,7 @@ let rootPackage = (deps, state) => {
     ...Cudf.default_package,
     package: rootName,
     version: 1,
-    depends: List.map(cudfDep(state), deps)
+    depends: List.map(cudfDep("root", state), deps)
   }
 };
 
@@ -203,6 +217,21 @@ let makeRequest = (deps, state) => {
  *
  */
 
+let lockDownSource = pendingSource => switch pendingSource {
+| Types.PendingSource.NoSource => Types.Source.NoSource
+| Archive(url, None) => {
+  print_endline("Pretending to get a checksum for " ++ url);
+  Types.Source.Archive(url, "fake checksum")
+}
+| Archive(url, Some(checksum)) => Types.Source.Archive(url, checksum)
+| GitSource(url, None) => {
+  /** TODO getting HEAD */
+  "git ls-remote git://github.com/alainfrisch/ppx_tools.git HEAD";
+  Types.Source.GitSource(url, "HEAD")
+}
+| GitSource(url, Some(sha)) => Types.Source.GitSource(url, sha)
+};
+
 let rec solveDeps = (cache, deps) => {
   let state = {
     cache,
@@ -239,7 +268,7 @@ let rec solveDeps = (cache, deps) => {
         ([{
           Lockfile.name: p.Cudf.package,
           version: version,
-          source: Manifest.getArchive(manifest),
+          source: lockDownSource(Manifest.getArchive(manifest)),
           opamFile: getOpamFile(manifest),
           unpackedLocation: "",
           buildDeps: [],
@@ -344,7 +373,7 @@ let solve = (config, manifest) => {
         };
         ({
         Lockfile.name: key,
-        source: Manifest.getArchive(manifest),
+        source: lockDownSource(Manifest.getArchive(manifest)),
         opamFile: getOpamFile(manifest),
         version: realVersion,
         unpackedLocation: "",

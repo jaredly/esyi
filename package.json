@@ -6,11 +6,13 @@
   "license": "MIT",
   "scripts": {
     "watch": "esy b && esy jbuilder exec esyi ../testing",
-    "watcher": "watchexec -w lib -w bin npm run watch -- -s"
+    "watcher": "watchexec -w lib -w bin npm run watch -- -s",
+    "run": "esy jbuilder build src/bin/esyi.exe && esy jbuilder exec esyi ../testing",
+    "test": "esy jbuilder build test/Test.exe && esy jbuilder exec test/Test.exe"
   },
   "esy": {
     "build": [
-      "jbuilder build"
+      ["jbuilder", "build"]
     ],
     "install": [
       "esy-installer"
@@ -26,11 +28,16 @@
     "@opam/ppx_deriving_yojson": "*",
     "@opam/mccs": "*",
     "lwt-node": "*",
+    "testre": "file:./../ppx_test/runtime",
+    "testre-ppx": "file:./../ppx_test/ppx",
     "@opam/opam-file-format": "*",
     "@opam/lwt": "^3.1.0"
   },
   "buildDependencies": {
-    "@opam/jbuilder": "^1.0.0-beta16",
+    "@opam/jbuilder": "^1.0-beta16",
+    "@opam/menhir": "*",
+    "@opam/reason": "3.0.4",
+    "@opam/ocamllex": "*",
     "@esy-ocaml/esy-installer": "^0.0.0"
   },
   "peerDependencies": {
@@ -38,7 +45,11 @@
   },
   "devDependencies": {
     "@opam/merlin": "^3.0.5",
+    "@opam/alcotest": "*",
     "ocaml": "~4.6.000"
+  },
+    "resolutions": {
+    "**/@opam/result": "1.2.0"
   },
   "private": true
 }

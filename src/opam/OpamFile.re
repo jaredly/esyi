@@ -1,4 +1,5 @@
 
+open Shared;
 open OpamParserTypes;
 open OpamOverrides.Infix;
 
@@ -17,7 +18,7 @@ type manifest = {
   peerDeps: list(Types.dep),
   optDependencies: list(Types.dep),
   /* TODO optDependencies (depopts) */
-  source: option((string, option(string))),
+  source: Types.PendingSource.t,
   /* TODO add name_installed n stuff */
   /*
       "ocamlfind_version": {
@@ -38,7 +39,7 @@ type manifest = {
 /* TODO parse an opam file into this manifest format */
 /* Then parse our fancy override json or yaml thing... I think? */
 
-type thinManifest = (string, string, string, VersionNumber.versionNumber);
+type thinManifest = (string, string, string, Shared.Types.opamConcrete);
 
 let rec findVariable = (name, items) => switch items {
 | [] => None
@@ -55,7 +56,7 @@ let opName = op => switch op {
   | `Gt => ">"
 };
 
-let fromPrefix = (op, version) => {
+/* let fromPrefix = (op, version) => {
   let v = VersionNumber.versionNumberNumber(version);
   switch op {
   | `Eq => Semver.Exactly(v)
@@ -65,7 +66,7 @@ let fromPrefix = (op, version) => {
   | `Gt => GreaterThan(v)
   | `Neq => failwith("Unexpected prefix op for version " ++ opName(op) ++ " " ++ version)
   }
-};
+}; */
 
 let withScope = name => "@opam/" ++ name;
 
@@ -78,22 +79,11 @@ let withoutScope = fullName => {
 };
 
 let toDep = opamvalue => {
-  let (name, s) = switch opamvalue {
-  | String(_, name) => (name, Semver.Any)
-  | Option(_, String(_, name), [Prefix_relop(_, op, String(_, version))]) => (name, fromPrefix(op, version))
-  | Option(_, String(_, name), [y]) => {
-    print_endline("Unexpected option " ++ name ++ " -- pretending its any " ++
-    OpamPrinter.value(opamvalue));
-    (name, Any)
-  }
-  | _ => {
-    failwith("Can't parse this opam dep " ++ OpamPrinter.value(opamvalue))
-  }
-  };
-  (withScope(name), s)
+  let (name, s, typ) = OpamVersion.toDep(opamvalue);
+  (withScope(name), s, typ)
 };
 
-let processDeps = deps => {
+let processDeps = (fileName, deps) => {
   let deps = switch (deps) {
   | None => []
   | Some(List(_, items)) => items
@@ -101,9 +91,7 @@ let processDeps = deps => {
   | _ => failwith("Can't handle the dependencies")
   };
 
-  List.fold_left(
-    ((deps, buildDeps, devDeps), dep) => {
-      try (switch dep {
+      /* try (switch dep {
       /* This doesn't cover the case where there's an OR that has "test" on each side */
       | Option(_, value, [Ident(_, "build")]) => (deps, [toDep(value), ...buildDeps], devDeps)
       | Option(_, value, [Ident(_, "test")]) => (deps, buildDeps, [toDep(value), ...devDeps])
@@ -119,6 +107,21 @@ let processDeps = deps => {
           print_endline("Bailing on a dep " ++ message);
           (deps, buildDeps, devDeps)
         }
+      } */
+
+  List.fold_left(
+    ((deps, buildDeps, devDeps), dep) => {
+      let (name, dep, typ) = try(toDep(dep)) {
+      | Failure(f) => {
+        print_endline("Failed to process dep: " ++ f);
+        print_endline(fileName);
+        failwith("bad")
+      }
+      };
+      switch typ {
+      | `Link => ([(name, dep), ...deps], buildDeps, devDeps)
+      | `Build => (deps, [(name, dep), ...buildDeps], devDeps)
+      | `Test => (deps, buildDeps, [(name, dep), ...devDeps])
       }
     },
     ([], [], []),
@@ -142,15 +145,23 @@ let variables = ((name, version)) => [
   ("share", "$cur__install/share"),
   ("pinned", "false"),
   ("name", name),
+  ("version", OpamVersion.viewAlpha(version)),
   ("prefix", "$cur__install"),
 ];
 
 let cleanEnvName = Str.global_replace(Str.regexp("-"), "_");
 
-let replaceGroupWithTransform = (rx, transform) => {
-  Str.global_substitute(rx, s => transform(Str.matched_group(1, s)))
+[@test [
+  ((Str.regexp("a\\(.\\)"), String.uppercase, "applae"), "PplE"),
+  ((Str.regexp("A\\(.\\)"), String.lowercase, "HANDS"), "HnDS"),
+]]
+let replaceGroupWithTransform = (rx, transform, string) => {
+  Str.global_substitute(rx, s => transform(Str.matched_group(1, s)), string)
 };
 
+[@test [
+  ((("awesome", Shared.Types.Alpha("", None)), "--%{fmt:enable}%-fmt"), "--${fmt_enable:-disable}-fmt")
+]]
 let replaceVariables = (info, string) => {
   let string = string
     |> replaceGroupWithTransform(Str.regexp("%{\\([^}]+\\):installed}%"), name => "${" ++ cleanEnvName(name) ++ "_installed:-false}")
@@ -186,7 +197,12 @@ let processCommand = (info, items) => {
       }
       }
     };
+    | Option(_, _, [Ident(_, "preinstalled")]) => {
+      /** Skipping preinstalled */
+      None
+    }
     | _ => {
+      /** TODO handle  "--%{text:enable}%-text" {"%{react:installed}%"} correctly */
       print_endline("Bad build arg " ++ OpamPrinter.value(item));
       None
     }
@@ -238,6 +254,7 @@ let processCommandList = (info, item) => {
   };
 };
 
+/** TODO handle "patch-ocsigen-lwt-101.diff" {os = "darwin"} correctly */
 let processStringList = item => {
   let items = switch(item) {
   | None => []
@@ -256,27 +273,37 @@ let processStringList = item => {
   });
 };
 
-let findArchive = contents => {
+let findArchive = (contents, file_name) => {
   switch (findVariable("archive", contents)) {
-  | Some(String(_, archive)) => archive
+  | Some(String(_, archive)) => Some(archive)
   | _ => {
     switch (findVariable("http", contents)) {
-    | Some(String(_, archive)) => archive
+    | Some(String(_, archive)) => Some(archive)
     | _ =>
     switch (findVariable("src", contents)) {
-    | Some(String(_, archive)) => archive
-    | _ => failwith("Invalid url file - no archive")
+    | Some(String(_, archive)) => Some(archive)
+    | _ => None
     }
   }
   }
   }
 };
 
-let parseUrlFile = ({file_contents}) => {
-  let archive = findArchive(file_contents);
-  switch (findVariable("checksum", file_contents)) {
-  | Some(String(_, checksum)) => Some((archive, Some(checksum)))
-  | _ => Some((archive, None))
+let parseUrlFile = ({file_contents, file_name}) => {
+  switch (findArchive(file_contents, file_name)) {
+  | None => {
+      switch (findVariable("git", file_contents)) {
+      | Some(String(_, git)) => Types.PendingSource.GitSource(git, None /* TODO parse out commit info */)
+      | _ => failwith("Invalid url file - no archive: " ++ file_name)
+      }
+  }
+  | Some(archive) => {
+    let checksum = switch (findVariable("checksum", file_contents)) {
+    | Some(String(_, checksum)) => Some(checksum)
+    | _ => None
+    };
+    Types.PendingSource.Archive(archive, checksum)
+  }
   }
 };
 
@@ -296,9 +323,9 @@ let getOpamFiles = (opam_name) => {
 };
 
 let parseManifest = (info, {file_contents, file_name}) => {
-  let baseDir = Filename.dirname(file_name);
-  let (deps, buildDeps, devDeps) = processDeps(findVariable("depends", file_contents));
-  let (depopts, _, _) = processDeps(findVariable("depopts", file_contents));
+  /* let baseDir = Filename.dirname(file_name); */
+  let (deps, buildDeps, devDeps) = processDeps(file_name, findVariable("depends", file_contents));
+  let (depopts, _, _) = processDeps(file_name, findVariable("depopts", file_contents));
   let files = getOpamFiles(file_name);
   let patches = processStringList(findVariable("patches", file_contents));
   /** OPTIMIZE: only read the files when generating the lockfile */
@@ -313,20 +340,20 @@ let parseManifest = (info, {file_contents, file_name}) => {
     files,
     deps: (deps |> List.map(toDepSource)) @ [
       /* HACK? Not sure where/when this should be specified */
-      ("@esy-ocaml/substs", Npm(Semver.Any)),
-      ("@esy-ocaml/esy-installer", Npm(Semver.Any))
+      ("@esy-ocaml/substs", Npm(GenericVersion.Any)),
+      ("@esy-ocaml/esy-installer", Npm(GenericVersion.Any))
     ],
     buildDeps: buildDeps |> List.map(toDepSource),
     devDeps: devDeps |> List.map(toDepSource),
     peerDeps: [], /* TODO peer deps */
     optDependencies: depopts |> List.map(toDepSource),
-    source: None,
+    source: Types.PendingSource.NoSource,
     exportedEnv: [],
   };
 };
 
 let parseDepVersion = ((name, version)) => {
-  PackageJson.parseNpmSource((name, version))
+  Npm.PackageJson.parseNpmSource((name, version))
 };
 
 module StrSet = Set.Make(String);
@@ -341,11 +368,7 @@ let assignAssoc = (target, override) => {
 
 module O = OpamOverrides;
 let mergeOverride = (manifest, override) => {
-  let source = override.O.opam |?> (opam => switch opam.O.url {
-    | Some(url) => Some((url, opam.O.checksum))
-    | None => None
-    }) |?? manifest.source;
-     /* |? manifest.source; */
+  let source = override.O.opam |?> (opam => opam.O.source) |? manifest.source;
   {
     ...manifest,
     build: override.O.build |? manifest.build,
@@ -361,7 +384,7 @@ let mergeOverride = (manifest, override) => {
 let getManifest = (opamOverrides, (opam, url, name, version)) => {
   let manifest = {
     ...parseManifest((name, version), OpamParser.file(opam)),
-    source: Files.exists(url) ? parseUrlFile(OpamParser.file(url)) : None
+    source: Files.exists(url) ? parseUrlFile(OpamParser.file(url)) : Types.PendingSource.NoSource
   };
   switch (OpamOverrides.findApplicableOverride(opamOverrides, name, version)) {
   | None => {

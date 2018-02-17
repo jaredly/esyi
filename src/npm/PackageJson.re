@@ -1,4 +1,5 @@
 open Cudf;
+open Shared;
 open Types;
 
 let getOpam = name => {
@@ -12,23 +13,27 @@ let getOpam = name => {
 };
 
 let isGithub = value => {
-  Str.string_match(Str.regexp("[a-zA-Z0-9-]+/[a-zA-Z0-9_-]+(#.+)?"), value, 0)
+  Str.string_match(Str.regexp("[a-zA-Z][a-zA-Z0-9-]+/[a-zA-Z0-9_-]+(#.+)?"), value, 0)
 };
+
+let startsWith = (value, needle) => String.length(value) > String.length(needle) && String.sub(value, 0, String.length(needle)) == needle;
 
 let parseNpmSource = ((name, value)) => {
   switch (getOpam(name)) {
-  | Some(name) => (name, Opam(Semver.parseSemver(value)))
+  | Some(name) => (name, Opam(
+        OpamConcrete.parseNpmRange(value)
+        /* NpmVersion.parseRange(value) |> GenericVersion.map(Shared.Types.opamFromNpmConcrete) */
+      ))
   | None => {
-    (name, switch (Semver.parseSemver(value)) {
-    | exception Failure(message) => {
+    (name,
       if (isGithub(value)) {
         Github(value)
-      } else {
+      } else if (startsWith(value, "git+")) {
         Git(value)
+      } else {
+        Npm(NpmVersion.parseRange(value))
       }
-    }
-    | x => Npm(x)
-    })
+    )
   }
   }
 };
@@ -91,7 +96,7 @@ let getArchive = (json) => {
       | `String(checksum) => checksum
       | _ => failwith("Bad checksum")
       };
-      Some((archive, Some(checksum)))
+      Types.PendingSource.Archive(archive, Some(checksum))
     }
     | _ => failwith("bad dist")
     }

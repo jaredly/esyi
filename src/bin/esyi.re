@@ -12,10 +12,10 @@ let solve = (basedir) => {
   let homeDir = homeDir();
   let json = Yojson.Basic.from_file(basedir /+ "package.json");
   let lockfile = Solve.solve({
-    Types.esyOpamOverrides: homeDir /+ ".esyi/esy-opam-override",
+    Shared.Types.esyOpamOverrides: homeDir /+ ".esyi/esy-opam-override",
     opamRepository: homeDir /+ ".esyi/opam-repository"
   }, `PackageJson(json));
-  let json = Lockfile.lockfile_to_yojson(lockfile);
+  let json = Shared.Lockfile.lockfile_to_yojson(lockfile);
   let chan = open_out(basedir /+ "esyi.lock.json");
   Yojson.Safe.pretty_to_channel(chan, json);
   close_out(chan)
@@ -24,13 +24,23 @@ let solve = (basedir) => {
 let fetch = (basedir) => {
   let homeDir = homeDir();
   let json = Yojson.Safe.from_file(basedir /+ "esyi.lock.json");
-  let lockfile = switch (Lockfile.lockfile_of_yojson(json)) {
+  let lockfile = switch (Shared.Lockfile.lockfile_of_yojson(json)) {
   | Error(a) => failwith("Bad lockfile")
   | Ok(a) => a
   };
-  Files.removeDeep(basedir /+ "node_modules");
+  Shared.Files.removeDeep(basedir /+ "node_modules");
   Fetch.fetch({
-    Types.esyOpamOverrides: homeDir /+ ".esyi/esy-opam-override",
+    Shared.Types.esyOpamOverrides: homeDir /+ ".esyi/esy-opam-override",
     opamRepository: homeDir /+ ".esyi/opam-repository"
   }, basedir, lockfile);
 };
+
+switch (Sys.argv) {
+  | [|_, "solve", basedir|] => solve(basedir)
+  | [|_, "fetch", basedir|] => fetch(basedir)
+  | [|_, basedir|] => {
+    solve(basedir);
+    fetch(basedir);
+  }
+  | _ => print_endline("Usage: esyi basedir")
+}

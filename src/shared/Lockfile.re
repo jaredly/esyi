@@ -60,8 +60,8 @@
 [@deriving yojson]
 type realVersion = [
   | `Github(string)
-  | `Npm(VersionNumber.versionNumber)
-  | `Opam(VersionNumber.versionNumber)
+  | `Npm(Types.npmConcrete)
+  | `Opam(Types.opamConcrete)
   | `Git(string)
 ];
 
@@ -69,7 +69,7 @@ type realVersion = [
 type solvedDep = {
   name: string,
   version: realVersion,
-  source: option((string, option(string))),
+  source: Types.Source.t,
   opamFile: option(string),
   unpackedLocation: string,
   buildDeps: list((string, realVersion)),
@@ -100,15 +100,15 @@ and lockfile = {
 let viewRealVersion = v => switch v {
 | `Github(s) => "github-" ++ s
 | `Git(s) => "git-" ++ s
-| `Npm(t) => "npm-" ++ VersionNumber.viewVersionNumber(t)
-| `Opam(t) => "opam-" ++ VersionNumber.viewVersionNumber(t)
+| `Npm(t) => "npm-" ++ Types.viewNpmConcrete(t)
+| `Opam(t) => "opam-" ++ Types.viewOpamConcrete(t)
 };
 
 let plainVersionNumber = v => switch v {
 | `Github(s) => s
 | `Git(s) => s
-| `Npm(t) => VersionNumber.viewVersionNumber(t)
-| `Opam(t) => VersionNumber.viewVersionNumber(t)
+| `Npm(t) => Types.viewNpmConcrete(t)
+| `Opam(t) => Types.viewOpamConcrete(t)
 };
 
 

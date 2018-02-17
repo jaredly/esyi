@@ -1,28 +1,20 @@
 
+open Shared;
+open Opam;
+
 let (/+) = Filename.concat;
 
 let consume = (fn, opt) => switch opt { | None => () | Some(x) => fn(x)};
 
 let expectSuccess = (msg, v) => if (v) { () } else { failwith(msg) };
 
+[@test [
+  (("/a/b/c", "/a/b/d"), "../d"),
+  (("/a/b/c", "/a/b/d/e"), "../d/e"),
+  (("/a/b/c", "/d/e/f"), "../../../d/e/f"),
+  (("/a/b/c", "/a/b/c/d/e"), "./d/e"),
+]]
 let relpath = (base, path) => {
-  /**
-   * /a/b/c/
-   * /a/b/d/
-   * ../d
-   *
-   * /a/b/c/
-   * /a/b/d/e/
-   * ../d/e
-   *
-   * /a/b/c/
-   * /d/e/f/
-   * ../../../d/e/f
-   *
-   * /a/b/c/
-   * /a/b/c/d/e/
-   * ./d/e/
-   */
   let rec loop = (bp, pp) => {
     switch (bp, pp) {
     | ([a, ...ra], [b, ...rb]) when a == b => loop(ra, rb)
@@ -31,7 +23,8 @@ let relpath = (base, path) => {
   };
   let (base, path) = loop(String.split_on_char('/', base), String.split_on_char('/', path));
   String.concat("/",
-  List.map((_) => "..", base) @ path
+  (base == [] ? ["."] : List.map((_) => "..", base))
+  @ path
   )
 };
 
@@ -49,8 +42,6 @@ let addResolvedFieldToPackageJson = (filename, name, version) => {
     ...json
   ]));
   Files.writeFile(filename, raw) |> expectSuccess("Could not write back package json");
-  /** TODO */
-  ()
 };
 
 let absname = (name, version) => {
@@ -64,7 +55,8 @@ let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFi
   } else {
     Files.mkdirp(dest);
 
-    source |> consume(((url, _checksum)) => {
+    switch source {
+    | Types.Source.Archive(url, _checksum) => {
       let safe = Str.global_replace(Str.regexp("/"), "-", name);
       let withVersion = safe ++ Lockfile.viewRealVersion(version);
       let tarball = cache /+ withVersion ++ ".tarball";
@@ -72,7 +64,25 @@ let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFi
         ExecCommand.execSync(~cmd="curl -L --output "++ tarball ++ " " ++ url, ()) |> snd |> expectSuccess("failed to fetch with curl");
       };
       ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
-    });
+    }
+    | Types.Source.NoSource => ()
+    | Types.Source.GitSource(gitUrl, commit) => {
+      let safe = Str.global_replace(Str.regexp("/"), "-", name);
+      let withVersion = safe ++ Lockfile.viewRealVersion(version);
+      let tarball = cache /+ withVersion ++ ".tarball";
+      if (!Files.isFile(tarball)) {
+        print_endline("[fetching git repo " ++ gitUrl ++ " at commit " ++ commit);
+        let gitdest = cache /+ "git-" ++ withVersion;
+        /** TODO we want to have the commit nailed down by this point tho */
+        ExecCommand.execSync(~cmd="git clone " ++ gitUrl ++ " " ++ gitdest, ()) |> snd |> expectSuccess("Unable to clone git repo " ++ gitUrl);
+        ExecCommand.execSync(~cmd="cd " ++ gitdest ++ " && git checkout " ++ commit ++ " && rm -rf .git", ()) |> snd |> expectSuccess("Unable to checkout " ++ gitUrl ++ " at " ++ commit);
+        ExecCommand.execSync(~cmd="tar czf " ++ tarball ++ " " ++ gitdest, ()) |> snd |> expectSuccess("Unable to tar up");
+        ExecCommand.execSync(~cmd="mv " ++ gitdest ++ " " ++ dest, ()) |> snd |> expectSuccess("Unable to move");
+      } else {
+        ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
+      }
+    }
+    };
 
     /* print_endline("Checking " ++ dest /+ "package.json"); */
     let packageJson = dest /+ "package.json";
@@ -141,7 +151,7 @@ let rec fetchDep = (opamOverrides, modcache, cache, {Lockfile.name, version} as 
 };
 
 let fetch = (config, basedir, lockfile) => {
-  let opamOverrides = OpamOverrides.getOverrides(config.Types.esyOpamOverrides);
+  let opamOverrides = Opam.OpamOverrides.getOverrides(config.Types.esyOpamOverrides);
   let cache = basedir /+ ".esy-cache" /+ "archives";
   Files.mkdirp(cache);
 
