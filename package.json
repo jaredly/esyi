@@ -34,7 +34,7 @@
     "@opam/lwt": "^3.1.0"
   },
   "buildDependencies": {
-    "@opam/jbuilder": "^1.0.0-beta16",
+    "@opam/jbuilder": "^1.0-beta16",
     "@opam/menhir": "*",
     "@opam/reason": "3.0.4",
     "@opam/ocamllex": "*",

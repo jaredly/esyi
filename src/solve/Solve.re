@@ -77,14 +77,14 @@ let matchesSource = (source, versionCache, package) => {
   satisfies(version, source)
 };
 
-let cudfDep = (state, (name, source)) => {
+let cudfDep = (owner, state, (name, source)) => {
   let available = Cudf.lookup_packages(state.universe, name);
   let num = List.length(available);
   let marching = available
   |> List.filter(matchesSource(source, state.lookupRealVersion))
   |> List.map(package => (package.Cudf.package, Some((`Eq, package.Cudf.version))));
   if (marching == []) {
-    print_endline("Opam semver wrong " ++ Types.viewReq(source));
+    print_endline("Opam semver wrong " ++ owner ++ " wants " ++ Types.viewReq(source));
     available |> List.iter(package => print_endline(Lockfile.viewRealVersion(getRealVersion(state.lookupRealVersion, package))));
     failwith("No package found for " ++ name ++ " when converting to a cudf dep (started with " ++ string_of_int(num) ++ ")")
   } else {
@@ -153,7 +153,7 @@ let rec addPackage = (name, realVersion, version, deps, buildDeps, state, manife
     package: name,
     version,
     conflicts: [(name, None)],
-    depends: List.map(cudfDep(state), deps)
+    depends: List.map(cudfDep(name, state), deps)
   };
   Cudf.add_package(state.universe, package);
 }
@@ -179,7 +179,7 @@ let rootPackage = (deps, state) => {
     ...Cudf.default_package,
     package: rootName,
     version: 1,
-    depends: List.map(cudfDep(state), deps)
+    depends: List.map(cudfDep("root", state), deps)
   }
 };
 
