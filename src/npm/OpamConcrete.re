@@ -121,8 +121,6 @@ let rec findNextForCaret = (Alpha(t, n)) => {
   }
 };
 
-let findNextForCaret = x => assert(false);
-
 let parseNpmRange = text => {
   if (text == "*") {
     GenericVersion.Any

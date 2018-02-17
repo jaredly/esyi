@@ -84,7 +84,7 @@ let cudfDep = (owner, state, (name, source)) => {
   |> List.filter(matchesSource(source, state.lookupRealVersion))
   |> List.map(package => (package.Cudf.package, Some((`Eq, package.Cudf.version))));
   if (marching == []) {
-    print_endline("Opam semver wrong " ++ owner ++ " wants " ++ Types.viewReq(source));
+    print_endline("Opam semver wrong " ++ owner ++ " wants " ++ name ++ " at version " ++ Types.viewReq(source));
     available |> List.iter(package => print_endline(Lockfile.viewRealVersion(getRealVersion(state.lookupRealVersion, package))));
     failwith("No package found for " ++ name ++ " when converting to a cudf dep (started with " ++ string_of_int(num) ++ ")")
   } else {
