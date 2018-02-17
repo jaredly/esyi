@@ -71,7 +71,8 @@ let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFi
       let withVersion = safe ++ Lockfile.viewRealVersion(version);
       let tarball = cache /+ withVersion ++ ".tarball";
       if (!Files.isFile(tarball)) {
-        let gitdest = cache /+ withVersion;
+        print_endline("[fetching git repo " ++ gitUrl ++ " at commit " ++ commit);
+        let gitdest = cache /+ "git-" ++ withVersion;
         /** TODO we want to have the commit nailed down by this point tho */
         ExecCommand.execSync(~cmd="git clone " ++ gitUrl ++ " " ++ gitdest, ()) |> snd |> expectSuccess("Unable to clone git repo " ++ gitUrl);
         ExecCommand.execSync(~cmd="cd " ++ gitdest ++ " && git checkout " ++ commit ++ " && rm -rf .git", ()) |> snd |> expectSuccess("Unable to checkout " ++ gitUrl ++ " at " ++ commit);
