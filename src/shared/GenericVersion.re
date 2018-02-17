@@ -11,6 +11,8 @@ type range('inner) =
   | Any;
   /* | UntilNextMajor('concrete) | UntilNextMinor('concrete); */
 
+/** TODO want a way to exclude npm -alpha items when they don't apply */
+
 let rec matches = (compareInner, range, concrete) => {
   switch range {
   | Exactly(a) => compareInner(a, concrete) == 0

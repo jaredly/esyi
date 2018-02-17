@@ -197,6 +197,10 @@ let processCommand = (info, items) => {
       }
       }
     };
+    | Option(_, _, [Ident(_, "preinstalled")]) => {
+      /** Skipping preinstalled */
+      None
+    }
     | _ => {
       print_endline("Bad build arg " ++ OpamPrinter.value(item));
       None
