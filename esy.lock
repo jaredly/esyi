@@ -87,14 +87,14 @@
 
 "@opam/biniou@ >= 1.2.0":
   version "1.2.0"
-  uid "75e2067086f4880a4c4d0808064da986"
+  uid af4880e80be63bbb3043fb7184882eb8
   resolved "@opam/biniou@1.2.0-75e2067086f4880a4c4d0808064da986.tgz"
   dependencies:
     "@esy-ocaml/esy-installer" "^0.0.0"
     "@esy-ocaml/substs" "^0.0.1"
     "@opam/conf-which" "*"
     "@opam/easy-format" "*"
-    "@opam/jbuilder" "*"
+    "@opam/jbuilder" " >= 1.0.0-beta7"
   peerDependencies:
     ocaml " >= 4.2.3000"
 
@@ -900,14 +900,9 @@
   peerDependencies:
     ocaml " >= 4.2.3000"
 
-"TestRe@file:../ppx_test/runtime":
-  version "0.0.1"
-  dependencies:
-    "@esy-ocaml/esy-installer" "^0.0.0"
-    "@opam/jbuilder" "^1.0.0-beta16"
-    "@opam/reason" "3.0.4"
-  peerDependencies:
-    ocaml "~4.6.000"
+"TestRe@link:../ppx_test/runtime":
+  version "0.0.0"
+  uid ""
 
 lwt-node@*:
   version "0.2.0"
@@ -937,27 +932,13 @@ refmterr@3.0.4:
   peerDependencies:
     ocaml " >= 4.2.0  < 4.6.0"
 
-"testre-ppx@file:../ppx_test/ppx":
-  version "0.0.1"
-  dependencies:
-    "@esy-ocaml/esy-installer" "^0.0.0"
-    "@opam/jbuilder" "^1.0.0-beta16"
-    "@opam/ocaml-migrate-parsetree" "*"
-    "@opam/ocamlbuild" "*"
-    "@opam/ppx_tools_versioned" "*"
-    "@opam/reason" "3.0.4"
-    TestRe "file:../../../.esy/install-cache/v1/runtime"
-  peerDependencies:
-    ocaml "~4.6.000"
+"testre-ppx@link:../ppx_test/ppx":
+  version "0.0.0"
+  uid ""
 
-"testre@file:../ppx_test/runtime":
-  version "0.0.1"
-  dependencies:
-    "@esy-ocaml/esy-installer" "^0.0.0"
-    "@opam/jbuilder" "^1.0.0-beta16"
-    "@opam/reason" "3.0.4"
-  peerDependencies:
-    ocaml "~4.6.000"
+"testre@link:../ppx_test/runtime":
+  version "0.0.0"
+  uid ""
 
 yarn-pkg-config@esy-ocaml/yarn-pkg-config#d488cd9321cd5036bd36ec96744ce78c5d45fc49:
   version "0.29.5"

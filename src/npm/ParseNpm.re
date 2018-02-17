@@ -165,6 +165,12 @@ let parseSimple = item => {
 };
 
 let parseSimples = item => {
+  let item = item
+  |> Str.global_replace(Str.regexp(">= +"), ">=")
+  |> Str.global_replace(Str.regexp("<= +"), "<=")
+  |> Str.global_replace(Str.regexp("> +"), ">")
+  |> Str.global_replace(Str.regexp("< +"), "<")
+  ;
   let items = String.split_on_char(' ', item);
   let rec loop = items => switch items {
   | [item] => parseSimple(item)
@@ -211,13 +217,17 @@ let parseRange = simple => {
 ])]
 [@test.print (fmt, v) => Format.fprintf(fmt, "%s", viewRange(v))]
 let parseOrs = version => {
-  let items = Str.split(Str.regexp(" +|| +"), version);
-  let rec loop = items => switch items {
-  | [] => assert(false)
-  | [item] => parseRange(item)
-  | [item, ...items] => Or(parseRange(item), loop(items))
-  };
-  loop(items)
+  if (version == "") {
+    Shared.GenericVersion.Any
+  } else {
+    let items = Str.split(Str.regexp(" +|| +"), version);
+    let rec loop = items => switch items {
+    | [] => failwith("WAAAT " ++ version)
+    | [item] => parseRange(item)
+    | [item, ...items] => Or(parseRange(item), loop(items))
+    };
+    loop(items)
+  }
 };
 
 let parse = parseOrs;

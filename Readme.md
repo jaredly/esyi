@@ -21,13 +21,12 @@ But in ocaml this time. With a real solver, so we get good dependencies.
     - [x] incorporate `esy-opam-overrides`
 - [x] get jbuilder building
 - [x] get [the test repository] building!
+- [x] handle opam versions correctly `(>= 1.2.0 & < 1.3.0)`
 
 ## Need to work generally
 
 - [ ] have the ocaml peerdependency version actually matter (I ignore the version currently)
-- [ ] convert opam `(>= 1.2.0 & < 1.3.0)` into `~1.2.0` (and similar)
 - [ ] respect the "available" flag in `opam`
-- [ ] process `*.in` files (I think I need to do that?)
 
 ## Needed less urgently
 

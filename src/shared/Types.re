@@ -6,27 +6,6 @@ type npmConcrete = (int, int, int, option(string));
 type alpha = Alpha(string, option(num))
 and num = Num(int, option(alpha));
 
-module PendingSource = {
-  [@deriving yojson]
-  type t =
-    /* url & checksum */
-    | Archive(string, option(string))
-    /* url & commit */
-    | GitSource(string, option(string))
-    | NoSource;
-};
-
-/** Lock that down */
-module Source = {
-  [@deriving yojson]
-  type t =
-    /* url & checksum */
-    | Archive(string, string)
-    /* url & commit */
-    | GitSource(string, string)
-    | NoSource;
-};
-
 [@deriving yojson]
 type opamConcrete = alpha;
 
@@ -51,6 +30,27 @@ let rec viewOpamConcrete = (Alpha(a, na)) => {
   | None => ""
   | Some(a) => viewOpamConcrete(a)
   }
+};
+
+module PendingSource = {
+  [@deriving yojson]
+  type t =
+    /* url & checksum */
+    | Archive(string, option(string))
+    /* url & commit */
+    | GitSource(string, option(string))
+    | NoSource;
+};
+
+/** Lock that down */
+module Source = {
+  [@deriving yojson]
+  type t =
+    /* url & checksum */
+    | Archive(string, string)
+    /* url & commit */
+    | GitSource(string, string)
+    | NoSource;
 };
 
 [@deriving yojson]

@@ -9,7 +9,6 @@ type manifest = {
   fileName: string,
   build: list(list(string)),
   install: list(list(string)),
-  /* TODO actually get the patches and files */
   patches: list(string), /* these should be absolute */
   files: list((string, string)), /* relname, sourcetext */
   deps: list(Types.dep),
@@ -17,27 +16,11 @@ type manifest = {
   devDeps: list(Types.dep),
   peerDeps: list(Types.dep),
   optDependencies: list(Types.dep),
+  /* available: boolean, */
   /* TODO optDependencies (depopts) */
   source: Types.PendingSource.t,
-  /* TODO add name_installed n stuff */
-  /*
-      "ocamlfind_version": {
-        "val": "1.7.3--1",
-        "scope": "global"
-      },
-      "ocamlfind_installed": {
-        "val": "true",
-        "scope": "global"
-      },
-      "ocamlfind_enable": {
-        "val": "enable",
-        "scope": "global"
-      },
-  */
   exportedEnv: list((string, (string, string))),
 };
-/* TODO parse an opam file into this manifest format */
-/* Then parse our fancy override json or yaml thing... I think? */
 
 type thinManifest = (string, string, string, Shared.Types.opamConcrete);
 
@@ -55,18 +38,6 @@ let opName = op => switch op {
   | `Geq => ">="
   | `Gt => ">"
 };
-
-/* let fromPrefix = (op, version) => {
-  let v = VersionNumber.versionNumberNumber(version);
-  switch op {
-  | `Eq => Semver.Exactly(v)
-  | `Geq => AtLeast(v)
-  | `Leq => AtMost(v)
-  | `Lt => LessThan(v)
-  | `Gt => GreaterThan(v)
-  | `Neq => failwith("Unexpected prefix op for version " ++ opName(op) ++ " " ++ version)
-  }
-}; */
 
 let withScope = name => "@opam/" ++ name;
 
@@ -90,24 +61,6 @@ let processDeps = (fileName, deps) => {
   | Some(Group(_, items)) => items
   | _ => failwith("Can't handle the dependencies")
   };
-
-      /* try (switch dep {
-      /* This doesn't cover the case where there's an OR that has "test" on each side */
-      | Option(_, value, [Ident(_, "build")]) => (deps, [toDep(value), ...buildDeps], devDeps)
-      | Option(_, value, [Ident(_, "test")]) => (deps, buildDeps, [toDep(value), ...devDeps])
-      | Option(_, String(_, name), [
-        Logop(_, `And, Ident(_, "build"), Prefix_relop(_, op, String(_, version)))
-      ]) => (deps, [(withScope(name), fromPrefix(op, version)), ...buildDeps], devDeps)
-      | Option(_, String(_, name), [
-        Logop(_, `And, Ident(_, "test"), Prefix_relop(_, op, String(_, version)))
-      ]) => (deps, buildDeps, [(withScope(name), fromPrefix(op, version)), ...devDeps])
-      | _ => ([toDep(dep), ...deps], buildDeps, devDeps);
-      }) {
-        | Failure(message) => {
-          print_endline("Bailing on a dep " ++ message);
-          (deps, buildDeps, devDeps)
-        }
-      } */
 
   List.fold_left(
     ((deps, buildDeps, devDeps), dep) => {
@@ -322,6 +275,11 @@ let getOpamFiles = (opam_name) => {
   }
 };
 
+/* TODO handle the "available: os = 'darwin'" thing */
+let determineOcamlVersion = available => {
+
+};
+
 let parseManifest = (info, {file_contents, file_name}) => {
   /* let baseDir = Filename.dirname(file_name); */
   let (deps, buildDeps, devDeps) = processDeps(file_name, findVariable("depends", file_contents));
@@ -341,7 +299,18 @@ let parseManifest = (info, {file_contents, file_name}) => {
     deps: (deps |> List.map(toDepSource)) @ [
       /* HACK? Not sure where/when this should be specified */
       ("@esy-ocaml/substs", Npm(GenericVersion.Any)),
-      ("@esy-ocaml/esy-installer", Npm(GenericVersion.Any))
+      ("@esy-ocaml/esy-installer", Npm(GenericVersion.Any)),
+      /* ("ocaml", Npm(GenericVersion.AtLeast(Npm.NpmVersion.parseConcrete("4.2.3")))), */
+      /* ("ocaml", Npm(GenericVersion.Exactly(Npm.NpmVersion.parseConcrete("4.6.1")))), */
+      ("ocaml",
+
+        Npm(
+          And(
+            GenericVersion.AtLeast(Npm.NpmVersion.parseConcrete("4.2.3")),
+            findVariable("available", file_contents) |?>> OpamAvailable.parseRange |?
+              GenericVersion.Any
+          )
+      )),
     ],
     buildDeps: buildDeps |> List.map(toDepSource),
     devDeps: devDeps |> List.map(toDepSource),
