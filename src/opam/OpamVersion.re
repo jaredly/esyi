@@ -11,69 +11,8 @@ type range = Shared.GenericVersion.range(concrete); */
 
 open Shared.Types;
 
-let triple = (major, minor, patch) => {
-  Shared.Types.opamFromNpmConcrete((major, minor, patch, None))
-};
-
-[@test [
-  (("123abc", 0), 3),
-  (("a123abc", 1), 4),
-  (("abc", 1), 1),
-  (("abc", 3), 3),
-]]
-let rec getNums = (text, pos) => {
-  if (pos < String.length(text)) {
-    switch (text.[pos]) {
-    | '0'..'9' => getNums(text, pos + 1)
-    | _ => pos
-    }
-  } else {
-    pos
-  }
-};
-
-let rec getNonNums = (text, pos) => {
-  if (pos < String.length(text)) {
-    switch (text.[pos]) {
-    | '0'..'9' => pos
-    | _ => getNonNums(text, pos + 1)
-    }
-  } else {
-    pos
-  }
-};
-
-[@test [
-  ("1.2.3", triple(1,2,3)),
-  ("1.2.3~alpha", Shared.Types.opamFromNpmConcrete((1,2,3, Some("~alpha")))),
-]]
-let parseConcrete = text => {
-  let len = String.length(text);
-  let rec getNum = (pos) => {
-    if (pos >= len) {
-      None
-    } else {
-      let tpos = getNums(text, pos);
-      let num = String.sub(text, pos, tpos - pos);
-      Some(Num(int_of_string(num), getString(tpos)))
-    }
-  } and getString = pos => {
-    if (pos >= len) {
-      None
-    } else switch (text.[pos]) {
-    | '0'..'9' => Some(Alpha("", getNum(pos)))
-    | _ => {
-      let tpos = getNonNums(text, pos);
-      let t = String.sub(text, pos, tpos - pos);
-      Some(Alpha(t, getNum(tpos)))
-    }
-    }
-  };
-  switch (getString(0)) {
-  | None => Alpha("", None)
-  | Some(a) => a
-  }
-};
+let parseConcrete = Npm.OpamConcrete.parseConcrete;
+let triple = Npm.OpamConcrete.triple;
 
 let fromPrefix = (op, version) => {
   open Shared.GenericVersion;

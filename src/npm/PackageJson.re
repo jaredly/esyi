@@ -20,7 +20,10 @@ let startsWith = (value, needle) => String.length(value) > String.length(needle)
 
 let parseNpmSource = ((name, value)) => {
   switch (getOpam(name)) {
-  | Some(name) => (name, Opam(NpmVersion.parseRange(value) |> GenericVersion.map(Shared.Types.opamFromNpmConcrete)))
+  | Some(name) => (name, Opam(
+        OpamConcrete.parseNpmRange(value)
+        /* NpmVersion.parseRange(value) |> GenericVersion.map(Shared.Types.opamFromNpmConcrete) */
+      ))
   | None => {
     (name,
       if (isGithub(value)) {
