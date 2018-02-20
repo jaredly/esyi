@@ -300,12 +300,10 @@ let parseManifest = (info, {file_contents, file_name}) => {
       /* HACK? Not sure where/when this should be specified */
       ("@esy-ocaml/substs", Npm(GenericVersion.Any)),
       ("@esy-ocaml/esy-installer", Npm(GenericVersion.Any)),
-      /* ("ocaml", Npm(GenericVersion.AtLeast(Npm.NpmVersion.parseConcrete("4.2.3")))), */
-      /* ("ocaml", Npm(GenericVersion.Exactly(Npm.NpmVersion.parseConcrete("4.6.1")))), */
       ("ocaml",
-
         Npm(
           And(
+            /* We just don't support anything before 4.2.3 */
             GenericVersion.AtLeast(Npm.NpmVersion.parseConcrete("4.2.3")),
             findVariable("available", file_contents) |?>> OpamAvailable.parseRange |?
               GenericVersion.Any
