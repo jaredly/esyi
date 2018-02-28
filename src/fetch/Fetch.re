@@ -66,6 +66,10 @@ let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFi
       ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
     }
     | Types.Source.NoSource => ()
+    | Types.Source.GithubSource(user, repo, ref) => {
+      /** TODO */
+      failwith("TODO")
+    }
     | Types.Source.GitSource(gitUrl, commit) => {
       let safe = Str.global_replace(Str.regexp("/"), "-", name);
       let withVersion = safe ++ Lockfile.viewRealVersion(version);

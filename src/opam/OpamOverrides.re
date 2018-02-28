@@ -1,5 +1,14 @@
 open Shared;
 
+module Infix = {
+  let (|?>) = (a, b) => switch a { | None => None | Some(x) => b(x) };
+  let (|?>>) = (a, b) => switch a { | None => None | Some(x) => Some(b(x)) };
+  let (|?) = (a, b) => switch a { | None => b | Some(a) => a };
+  let (|??) = (a, b) => switch a { | None => b | Some(a) => Some(a) };
+  let (|!) = (a, b) => switch a { | None => failwith(b) | Some(a) => a };
+};
+open Infix;
+
 type opamSection = {
   source: option(Types.PendingSource.t),
   files: list((string, string)), /* relpath, contents */
@@ -28,15 +37,6 @@ let rec yamlToJson = value => switch value {
 | `Bool(b) => `Bool(b)
 | `Null => `Null
 };
-
-module Infix = {
-  let (|?>) = (a, b) => switch a { | None => None | Some(x) => b(x) };
-  let (|?>>) = (a, b) => switch a { | None => None | Some(x) => Some(b(x)) };
-  let (|?) = (a, b) => switch a { | None => b | Some(a) => a };
-  let (|??) = (a, b) => switch a { | None => b | Some(a) => Some(a) };
-  let (|!) = (a, b) => switch a { | None => failwith(b) | Some(a) => a };
-};
-open Infix;
 
 let module ProcessJson = {
 

@@ -11,7 +11,7 @@ Printexc.record_backtrace(true);
 
 let satisfies = (realVersion, req) => {
   switch (req, realVersion) {
-  | (Types.Github(source), `Github(source_)) when source == source_ => true
+  | (Types.Github(user, repo, ref), `Github(user_, repo_, ref_)) when user == user_ && repo == repo_ && ref == ref_ => true
   | (Npm(semver), `Npm(s)) when NpmVersion.matches(semver, s) => true
   | (Opam(semver), `Opam(s)) when OpamVersion.matches(semver, s) => true
   | _ => false
@@ -94,8 +94,8 @@ let cudfDep = (owner, state, (name, source)) => {
 
 let getAvailableVersions = (cache, (name, source)) => {
   switch source {
-  | Types.Github(url) => {
-    [`Github(url)]
+  | Types.Github(user, repo, ref) => {
+    [`Github(user, repo, ref)]
   }
   | Npm(semver) => {
     if (!Hashtbl.mem(cache.availableNpmVersions, name)) {
@@ -230,6 +230,7 @@ let lockDownSource = pendingSource => switch pendingSource {
   Types.Source.GitSource(url, "HEAD")
 }
 | GitSource(url, Some(sha)) => Types.Source.GitSource(url, sha)
+| GithubSource(user, name, ref) => Shared.Infix.(Types.Source.GithubSource(user, name, ref |? "master"))
 };
 
 let rec solveDeps = (cache, deps) => {

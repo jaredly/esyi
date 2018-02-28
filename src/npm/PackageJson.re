@@ -26,12 +26,16 @@ let parseNpmSource = ((name, value)) => {
       ))
   | None => {
     (name,
-      if (isGithub(value)) {
-        Github(value)
-      } else if (startsWith(value, "git+")) {
-        Git(value)
-      } else {
-        Npm(NpmVersion.parseRange(value))
+      switch (Shared.GithubVersion.parseGithubVersion(value)) {
+      | Some(gh) => gh
+      | None => {
+        if (startsWith(value, "git+")) {
+          Git(value)
+        } else {
+          Npm(NpmVersion.parseRange(value))
+        }
+
+      }
       }
     )
   }

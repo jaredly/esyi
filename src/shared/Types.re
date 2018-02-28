@@ -37,8 +37,9 @@ module PendingSource = {
   type t =
     /* url & checksum */
     | Archive(string, option(string))
-    /* url & commit */
+    /* url & ref */
     | GitSource(string, option(string))
+    | GithubSource(string, string, option(string))
     | NoSource;
 };
 
@@ -50,13 +51,14 @@ module Source = {
     | Archive(string, string)
     /* url & commit */
     | GitSource(string, string)
+    | GithubSource(string, string, string)
     | NoSource;
 };
 
 [@deriving yojson]
 type depSource =
   | Npm(GenericVersion.range(npmConcrete))
-  | Github(string) /* maybe cover auth here, maybe subdir support */
+  | Github(string, string, option(string)) /* user, repo, ref (branch/tag/commit) */
   | Opam(GenericVersion.range(opamConcrete)) /* opam allows a bunch of weird stuff. for now I'm just doing semver */
   | Git(string)
   ;
@@ -67,7 +69,7 @@ let resolvedPrefix = "esyi2-";
 type dep = (string, depSource);
 
 let viewReq = req => switch req {
-| Github(s) => "github: " ++ s
+| Github(org, repo, ref) => "github: " ++ org ++ "/" ++ repo
 | Git(s) => "git: " ++ s
 | Npm(t) => "npm: " ++ GenericVersion.view(viewNpmConcrete, t)
 | Opam(t) => "opam: " ++ GenericVersion.view(viewOpamConcrete, t)
