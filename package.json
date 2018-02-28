@@ -29,11 +29,13 @@
     "@opam/ppx_deriving_yojson": "*",
     "@opam/mccs": "*",
     "lwt-node": "*",
-    "testre": "link:./../ppx_test/runtime",
-    "testre-ppx": "link:./../ppx_test/ppx",
+    "@jaredly/testre": "*",
+    "testre-ppx": "*",
     "@opam/opam-file-format": "*",
     "@opam/lwt": "^3.1.0"
   },
+  "// testre": "link:./../ppx_test/runtime",
+  "// testre-ppx": "link:./../ppx_test/ppx",
   "buildDependencies": {
     "@opam/jbuilder": "^1.0-beta16",
     "@opam/menhir": "*",

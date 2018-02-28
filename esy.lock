@@ -14,6 +14,16 @@
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/@esy-ocaml/substs/-/substs-0.0.1.tgz#59ebdbbaedcda123fc7ed8fb2b302b7d819e9a46"
 
+"@jaredly/testre@*":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@jaredly/testre/-/testre-0.0.1.tgz#fb44ba4e05b7f462189b0ceae7cb25605babb765"
+  dependencies:
+    "@esy-ocaml/esy-installer" "^0.0.0"
+    "@opam/jbuilder" "^1.0.0-beta16"
+    "@opam/reason" "3.0.4"
+  peerDependencies:
+    ocaml "~4.6.000"
+
 "@opam/alcotest@*", "@opam/alcotest@0.8.1":
   version "0.8.1"
   uid "1adc2d5daa9852e7b2cd50de366a0f2a"
@@ -219,7 +229,7 @@
 
 "@opam/cppo_ocamlbuild@*":
   version "1.6.0"
-  uid "6fd85090225019f09a636edd7e6d011e"
+  uid "76c36d0e895b7ef5a207f158d017d4da"
   resolved "@opam/cppo_ocamlbuild@1.6.0-6fd85090225019f09a636edd7e6d011e.tgz"
   dependencies:
     "@esy-ocaml/esy-installer" "^0.0.0"
@@ -597,7 +607,7 @@
 
 "@opam/ppx_deriving_yojson@*":
   version "3.1.0"
-  uid "1d6b71b8c5e2a367eb62a2f5915d5dfe"
+  uid "8c7c66c0c254daf2603e46b74b9a01b5"
   resolved "@opam/ppx_deriving_yojson@3.1.0-1d6b71b8c5e2a367eb62a2f5915d5dfe.tgz"
   dependencies:
     "@esy-ocaml/esy-installer" "^0.0.0"
@@ -614,13 +624,13 @@
 
 "@opam/ppx_driver@ >= 100000000.10.0  < 100000000.11.0":
   version "100000000.10.2"
-  uid "3672f1997608416e639d8938d803d7d1"
+  uid "96cc26061aef5b90c72df269bc6090b1"
   resolved "@opam/ppx_driver@100000000.10.2-3672f1997608416e639d8938d803d7d1.tgz"
   dependencies:
     "@esy-ocaml/esy-installer" "^0.0.0"
     "@esy-ocaml/substs" "^0.0.1"
     "@opam/jbuilder" " >= 1.0.0-beta12"
-    "@opam/ocaml-migrate-parsetree" " >= 0.4.0"
+    "@opam/ocaml-migrate-parsetree" " >= 1.0.0"
     "@opam/ppx_core" " >= 100000000.10.0  < 100000000.11.0"
     "@opam/ppx_optcomp" " >= 100000000.10.0  < 100000000.11.0"
   peerDependencies:
@@ -900,10 +910,6 @@
   peerDependencies:
     ocaml " >= 4.2.3000"
 
-"TestRe@link:../ppx_test/runtime":
-  version "0.0.0"
-  uid ""
-
 lwt-node@*:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/lwt-node/-/lwt-node-0.2.0.tgz#7b5b90ff830d077ba70b201d3c0a345f7dcb0891"
@@ -932,13 +938,23 @@ refmterr@3.0.4:
   peerDependencies:
     ocaml " >= 4.2.0  < 4.6.0"
 
-"testre-ppx@link:../ppx_test/ppx":
-  version "0.0.0"
-  uid ""
+testre-ppx@*:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/testre-ppx/-/testre-ppx-0.0.1.tgz#808db864ab56e9f2fd2450b16bce31fec949ffda"
+  dependencies:
+    "@esy-ocaml/esy-installer" "^0.0.0"
+    "@opam/jbuilder" "^1.0.0-beta16"
+    "@opam/ocaml-migrate-parsetree" "*"
+    "@opam/ocamlbuild" "*"
+    "@opam/ppx_tools_versioned" "*"
+    "@opam/reason" "3.0.4"
+    testre "*"
+  peerDependencies:
+    ocaml "~4.6.000"
 
-"testre@link:../ppx_test/runtime":
-  version "0.0.0"
-  uid ""
+testre@*:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/testre/-/testre-1.0.3.tgz#c9ba65e41ef148631d9fb5e5ea0f8f5c04386c74"
 
 yarn-pkg-config@esy-ocaml/yarn-pkg-config#d488cd9321cd5036bd36ec96744ce78c5d45fc49:
   version "0.29.5"
