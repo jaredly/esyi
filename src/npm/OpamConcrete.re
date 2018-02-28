@@ -121,7 +121,8 @@ let rec findNextForCaret = (Alpha(t, n)) => {
   }
 };
 
-let parseNpmRange = text => {
+/** TODO handle ranges in here */
+let parseOpamSimple = text => {
   if (text == "*") {
     GenericVersion.Any
   } else if (text == "") {
@@ -144,3 +145,5 @@ let parseNpmRange = text => {
     GenericVersion.Exactly(parseConcrete(text))
   }
 };
+
+let parseNpmRange = ParseNpm.parseOrs(text => ParseNpm.parseSimples(text, parseOpamSimple));

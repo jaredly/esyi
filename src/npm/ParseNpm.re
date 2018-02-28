@@ -164,7 +164,7 @@ let parseSimple = item => {
   }
 };
 
-let parseSimples = item => {
+let parseSimples = (item, parseSimple) => {
   let item = item
   |> Str.global_replace(Str.regexp(">= +"), ">=")
   |> Str.global_replace(Str.regexp("<= +"), "<=")
@@ -187,10 +187,10 @@ let parseSimples = item => {
   ("1.2.3 - 2.3", And(AtLeast((1,2,3,None)), LessThan((2,4,0,None)))),
 ])]
 [@test.print (fmt, v) => Format.fprintf(fmt, "%s", viewRange(v))]
-let parseRange = simple => {
+let parseNpmRange = (simple) => {
   let items = Str.split(Str.regexp(" +- +"), simple);
   switch items {
-  | [item] => parseSimples(item)
+  | [item] => parseSimples(item, parseSimple)
   | [left, right] => {
     let left = AtLeast(parsePartial(left) |> exactPartial);
     let right = switch (parsePartial(right)) {
@@ -215,8 +215,9 @@ let parseRange = simple => {
   ("1.2.3 - 2.3.4", And(AtLeast((1,2,3,None)), AtMost((2,3,4,None)))),
   ("1.2.3 - 2.3 || 5.x", Or(And(AtLeast((1,2,3,None)), LessThan((2,4,0,None))), And(AtLeast((5, 0, 0, None)), LessThan((6, 0, 0, None))))),
 ])]
+[@test.call parseOrs(parseNpmRange)]
 [@test.print (fmt, v) => Format.fprintf(fmt, "%s", viewRange(v))]
-let parseOrs = version => {
+let parseOrs = (parseRange, version) => {
   if (version == "") {
     Shared.GenericVersion.Any
   } else {
@@ -230,4 +231,4 @@ let parseOrs = version => {
   }
 };
 
-let parse = parseOrs;
+let parse = parseOrs(parseNpmRange);
