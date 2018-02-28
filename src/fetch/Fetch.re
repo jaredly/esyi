@@ -68,7 +68,13 @@ let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFi
     | Types.Source.NoSource => ()
     | Types.Source.GithubSource(user, repo, ref) => {
       /** TODO */
-      failwith("TODO")
+      let safe = Str.global_replace(Str.regexp("/"), "-", name ++ "__" ++ user ++ "__" ++ repo ++ "__" ++ ref);
+      let tarball = cache /+ safe ++ ".tarball";
+      if (!Files.isFile(tarball)) {
+        let tarUrl = "https://api.github.com/repos/" ++ user ++ "/" ++ repo ++ "/tarball/" ++ ref;
+        ExecCommand.execSync(~cmd="curl -L --output "++ tarball ++ " " ++ tarUrl, ()) |> snd |> expectSuccess("failed to fetch with curl");
+      };
+      ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
     }
     | Types.Source.GitSource(gitUrl, commit) => {
       let safe = Str.global_replace(Str.regexp("/"), "-", name);
@@ -132,14 +138,14 @@ let rec fetchDep = (opamOverrides, modcache, cache, {Lockfile.name, version} as 
     unpackArchive(opamOverrides, base, cache, dep);
 
     childDeps |> List.iter((childDep) => {
-      fetchDep(opamOverrides, modcache, cache, childDep, []);
-
-      let dest = base /+ "node_modules" /+ childDep.name;
+      let dest = base /+ "node_modules" /+ childDep.Shared.Lockfile.name;
       if (Files.exists(dest)) {
-        failwith("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
-      };
-      Files.mkdirp(Filename.dirname(dest));
-      symlink(modcache /+ absname(childDep.name, childDep.version), dest)
+        print_endline("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
+      } else {
+        fetchDep(opamOverrides, modcache, cache, childDep, []);
+        Files.mkdirp(Filename.dirname(dest));
+        symlink(modcache /+ absname(childDep.name, childDep.version), dest)
+      }
     });
 
     dep.buildDeps |> List.iter(((name, realVersion)) => {
@@ -176,10 +182,12 @@ let fetch = (config, basedir, lockfile) => {
     print_endline("Dev dep here " ++ absname(name, realVersion));
     let dest = basedir /+ "node_modules" /+ name;
     if (Files.exists(dest)) {
-      failwith("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
-    };
-    Files.mkdirp(Filename.dirname(dest));
-    symlink(modcache /+ absname(name, realVersion), dest)
+      /** TODO handle better */
+      print_endline("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
+    } else {
+      Files.mkdirp(Filename.dirname(dest));
+      symlink(modcache /+ absname(name, realVersion), dest)
+    }
   });
 
   lockfile.allBuildDeps |> List.iter(((name, versions)) => {
