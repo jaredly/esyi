@@ -5,6 +5,5 @@ let module Suites = {
   include Npm.ParseNpm;
 };
 
-/* Src.Something.getNums("awe123", 1); */
-print_endline("Hello");
+print_endline("Running tests");
 TestRe.report();

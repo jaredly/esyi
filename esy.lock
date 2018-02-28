@@ -490,7 +490,7 @@
   peerDependencies:
     ocaml " >= 4.4.1000"
 
-"@opam/ocaml-migrate-parsetree@ >= 0.4.0", "@opam/ocaml-migrate-parsetree@ >= 1.0.3", "@opam/ocaml-migrate-parsetree@*":
+"@opam/ocaml-migrate-parsetree@ >= 0.4.0", "@opam/ocaml-migrate-parsetree@ >= 1.0.0", "@opam/ocaml-migrate-parsetree@ >= 1.0.3", "@opam/ocaml-migrate-parsetree@*":
   version "1.0.7"
   uid "8dd63da93ee2ed29313f5b50471c94ae"
   resolved "@opam/ocaml-migrate-parsetree@1.0.7-8dd63da93ee2ed29313f5b50471c94ae.tgz"
@@ -938,23 +938,9 @@ refmterr@3.0.4:
   peerDependencies:
     ocaml " >= 4.2.0  < 4.6.0"
 
-testre-ppx@*:
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/testre-ppx/-/testre-ppx-0.0.1.tgz#808db864ab56e9f2fd2450b16bce31fec949ffda"
-  dependencies:
-    "@esy-ocaml/esy-installer" "^0.0.0"
-    "@opam/jbuilder" "^1.0.0-beta16"
-    "@opam/ocaml-migrate-parsetree" "*"
-    "@opam/ocamlbuild" "*"
-    "@opam/ppx_tools_versioned" "*"
-    "@opam/reason" "3.0.4"
-    testre "*"
-  peerDependencies:
-    ocaml "~4.6.000"
-
-testre@*:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/testre/-/testre-1.0.3.tgz#c9ba65e41ef148631d9fb5e5ea0f8f5c04386c74"
+"testre-ppx@link:../ppx_test/ppx":
+  version "0.0.0"
+  uid ""
 
 yarn-pkg-config@esy-ocaml/yarn-pkg-config#d488cd9321cd5036bd36ec96744ce78c5d45fc49:
   version "0.29.5"
