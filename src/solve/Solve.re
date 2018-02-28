@@ -169,12 +169,21 @@ let getAvailableVersions = (cache, (name, source)) => {
     if (!Hashtbl.mem(cache.availableOpamVersions, name)) {
       Hashtbl.replace(cache.availableOpamVersions, name, Opam.Registry.getFromOpamRegistry(cache.config, name))
     };
-    let available = Hashtbl.find(cache.availableOpamVersions, name);
-    available
+    let available = Hashtbl.find(cache.availableOpamVersions, name)
     |> List.sort(((va, _), (vb, _)) => OpamVersion.compare(va, vb))
-    |> List.mapi((i, (v, j)) => (v, j, i))
-    |> List.filter(((version, path, i)) => OpamVersion.matches(semver, version))
-    |> List.map(((version, path, i)) => `Opam(version, path, i));
+    |> List.mapi((i, (v, j)) => (v, j, i));
+    let matched = available
+    |> List.filter(((version, path, i)) => OpamVersion.matches(semver, version));
+    let matched = if (matched == []) {
+      print_endline("No matching versions for " ++ name ++ " when looking in the opam repo");
+      List.iter(((version, _, _)) => {
+        print_endline(Types.viewOpamConcrete(version));
+      }, available);
+      available |> List.filter(((version, path, i)) => OpamVersion.matches(tryConvertingOpamFromNpm(semver), version))
+    } else {
+      matched
+    };
+    matched |> List.map(((version, path, i)) => `Opam(version, path, i));
   }
   | _ => []
   }

@@ -96,6 +96,11 @@ let getArchive = (json) => {
   switch json {
   | `Assoc(items) => {
     switch (List.assoc("dist", items)) {
+    | exception Not_found => {
+      print_endline(Yojson.Basic.pretty_to_string(json));
+      failwith("No dist")
+    }
+
     | `Assoc(items) => {
       let archive = switch(List.assoc("tarball", items)) {
       | `String(archive) => archive
