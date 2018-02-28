@@ -98,6 +98,10 @@ let rec tryConvertingOpamFromNpm = version => {
     /* try stripping the patch version */
     print_endline("in the guts " ++ Shared.Types.viewOpamConcrete(opam));
     switch opam {
+    /* yay jbuilder */
+    | Alpha("", Some(Num(major, Some(Alpha(".", Some(Num(minor, Some(Alpha(".", Some(Num(0, Some(Alpha("-beta", rest))))))))))))) => {
+      Alpha("", Some(Num(major, Some(Alpha(".", Some(Num(minor, Some(Alpha("+beta", rest)))))))))
+    }
     | Alpha("", Some(Num(major, Some(Alpha(".", Some(Num(minor, Some(Alpha(".", Some(Num(0, post))))))))))) => {
       Alpha("", Some(Num(major, Some(Alpha(".", Some(Num(minor, post)))))))
     }
@@ -334,7 +338,10 @@ let rec solveDeps = (cache, deps) => {
         ([{
           Lockfile.name: p.Cudf.package,
           version: version,
-          source: lockDownSource(Manifest.getArchive(manifest)),
+          source:
+          lockDownSource(switch version {
+          | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
+          | _ => Manifest.getArchive(manifest)}) ,
           opamFile: getOpamFile(manifest),
           unpackedLocation: "",
           buildDeps: [],
