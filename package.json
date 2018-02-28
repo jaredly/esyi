@@ -8,6 +8,7 @@
     "watch": "esy b && esy jbuilder exec esyi ../testing",
     "watcher": "watchexec -w lib -w bin npm run watch -- -s",
     "run": "esy jbuilder build src/bin/esyi.exe && esy jbuilder exec esyi ../testing",
+    "wall": "esy jbuilder build src/bin/esyi.exe && esy jbuilder exec esyi ../../games/reason-wall-demo",
     "test": "esy jbuilder build test/Test.exe && esy jbuilder exec test/Test.exe"
   },
   "esy": {

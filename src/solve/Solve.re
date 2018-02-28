@@ -77,19 +77,75 @@ let matchesSource = (source, versionCache, package) => {
   satisfies(version, source)
 };
 
+/* [@test [
+  ((Npm.OpamConcrete.parseConcrete("1.2.0")))
+]]
+let opamMatchesIfYourePretendingToBeNpm = (fakeNpmVersion, opamVersion) => {
+  open Types;
+  let rec alpha = (Alpha(n_str, n_num), Alpha(o_str, o_num)) => {
+
+  } and num = (Num(n_num, n_str), Num(o_num, o_str)) => {
+
+  };
+  true
+}; */
+
+/** TODO(jared): This is a HACK and will hopefully be removed once we stop the
+ * pseudo-npm opam version stuff */
+let rec tryConvertingOpamFromNpm = version => {
+  open Shared.Types;
+  version |> Shared.GenericVersion.map(opam => {
+    /* try stripping the patch version */
+    print_endline("in the guts " ++ Shared.Types.viewOpamConcrete(opam));
+    switch opam {
+    | Alpha("", Some(Num(major, Some(Alpha(".", Some(Num(minor, Some(Alpha(".", Some(Num(0, post))))))))))) => {
+      Alpha("", Some(Num(major, Some(Alpha(".", Some(Num(minor, post)))))))
+    }
+    | _ => opam
+    }
+  });
+};
+
+/* let maybeFindOpamNpm = (available, opamVersion, realVersionCache) => {
+  /* available |> List.filter(package => {
+    switch (Hashtbl.find(realVersionCache, (package.Cudf.package, package.Cudf.version))) {
+    | exception Not_found => failwith("Trying to find a package not in the versioncache")
+    | `Opam(someVersion) => {
+      opamMatchesIfYourePretendingToBeNpm(opamVersion, someVersion)
+    }
+    | _ => false
+    }
+  }) */
+}; */
+
 let cudfDep = (owner, state, (name, source)) => {
   let available = Cudf.lookup_packages(state.universe, name);
   let num = List.length(available);
-  let marching = available
-  |> List.filter(matchesSource(source, state.lookupRealVersion))
-  |> List.map(package => (package.Cudf.package, Some((`Eq, package.Cudf.version))));
-  if (marching == []) {
-    print_endline("Opam semver wrong " ++ owner ++ " wants " ++ name ++ " at version " ++ Types.viewReq(source));
-    available |> List.iter(package => print_endline(Lockfile.viewRealVersion(getRealVersion(state.lookupRealVersion, package))));
-    failwith("No package found for " ++ name ++ " when converting to a cudf dep (started with " ++ string_of_int(num) ++ ")")
+  let matching = available
+  |> List.filter(matchesSource(source, state.lookupRealVersion));
+  (if (matching == []) {
+    let hack = switch source {
+    | Opam(opamVersionRange) => {
+      print_endline("Trying to convert from pseudo-npm");
+      let nonNpm = tryConvertingOpamFromNpm(opamVersionRange);
+      print_endline(Shared.GenericVersion.view(Shared.Types.viewOpamConcrete, nonNpm));
+        available |> List.filter(matchesSource(Opam(nonNpm), state.lookupRealVersion))
+    }
+    /* maybeFindOpamNpm(available, opamVersionRange, state.lookupRealVersion) */
+    | _ => []
+    };
+    switch hack {
+    | [] => {
+      print_endline("Requirement wrong " ++ owner ++ " wants " ++ name ++ " at version " ++ Types.viewReq(source));
+      available |> List.iter(package => print_endline(Lockfile.viewRealVersion(getRealVersion(state.lookupRealVersion, package))));
+      failwith("No package found for " ++ name ++ " when converting to a cudf dep (found " ++ string_of_int(num) ++ " incompatible versions)")
+    }
+    | matching => matching
+    }
   } else {
-    marching
-  }
+    matching
+  })
+  |> List.map(package => (package.Cudf.package, Some((`Eq, package.Cudf.version))));
 };
 
 let getAvailableVersions = (cache, (name, source)) => {
@@ -129,7 +185,7 @@ let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
   switch (Hashtbl.find(cache, (name, realVersion))) {
   | exception Not_found => {
     let manifest = switch versionPlus {
-    | `Github(url) =>  assert(false)
+    | `Github(user, repo, ref) => Github.getManifest(name, user, repo, ref)
     /* Registry.getGithubManifest(url) */
     | `Npm(version, json, _) => `PackageJson(json)
     | `Opam(version, path, _) => `OpamFile(OpamFile.getManifest(opamOverrides, path))
@@ -153,7 +209,7 @@ let rec addPackage = (name, realVersion, version, deps, buildDeps, state, manife
     package: name,
     version,
     conflicts: [(name, None)],
-    depends: List.map(cudfDep(name, state), deps)
+    depends: List.map(cudfDep(name ++ " (at " ++ Shared.Lockfile.viewRealVersion(realVersion) ++ ")", state), deps)
   };
   Cudf.add_package(state.universe, package);
 }

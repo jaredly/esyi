@@ -124,6 +124,8 @@ let rec findNextForCaret = (Alpha(t, n)) => {
 let parseNpmRange = text => {
   if (text == "*") {
     GenericVersion.Any
+  } else if (text == "") {
+    GenericVersion.Any
   } else if (text.[0] == '^') {
     let version = parseConcrete(ParseNpm.sliceToEnd(text, 1));
     let next = findNextForCaret(version);
@@ -136,6 +138,8 @@ let parseNpmRange = text => {
     GenericVersion.(
       And(AtLeast(version), LessThan(next))
     )
+  } else if (text.[0] == '=') {
+    GenericVersion.Exactly(parseConcrete(ParseNpm.sliceToEnd(text, 1)))
   } else {
     GenericVersion.Exactly(parseConcrete(text))
   }

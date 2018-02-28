@@ -66,6 +66,10 @@ let rec toDep = opamvalue => {
     print_endline("Arbitrarily choosing the second of two options: " ++ one ++ " and " ++ two);
     (two, Any, `Link)
   }
+  | Group(_, [Logop(_, `Or, first, second)]) => {
+    print_endline("Arbitrarily choosing the first of two options: " ++ OpamPrinter.value(first) ++ " and " ++ OpamPrinter.value(second));
+    toDep(first)
+  }
   | Option(_, String(_, name), [option]) => {
     (name, parseRange(option), `Link)
   }
