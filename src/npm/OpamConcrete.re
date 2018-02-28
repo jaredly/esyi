@@ -141,6 +141,14 @@ let parseOpamSimple = text => {
     )
   } else if (text.[0] == '=') {
     GenericVersion.Exactly(parseConcrete(ParseNpm.sliceToEnd(text, 1)))
+  } else if (text.[0] == '<' && text.[1] == '=') {
+    GenericVersion.AtMost(parseConcrete(ParseNpm.sliceToEnd(text, 2)))
+  } else if (text.[0] == '<') {
+    GenericVersion.LessThan(parseConcrete(ParseNpm.sliceToEnd(text, 1)))
+  } else if (text.[0] == '>' && text.[1] == '=') {
+    GenericVersion.AtLeast(parseConcrete(ParseNpm.sliceToEnd(text, 2)))
+  } else if (text.[0] == '>') {
+    GenericVersion.GreaterThan(parseConcrete(ParseNpm.sliceToEnd(text, 1)))
   } else {
     GenericVersion.Exactly(parseConcrete(text))
   }
