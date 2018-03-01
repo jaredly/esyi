@@ -16,7 +16,7 @@ type manifest = {
   devDeps: list(Types.dep),
   peerDeps: list(Types.dep),
   optDependencies: list(Types.dep),
-  /* available: boolean, */
+  available: bool,
   /* TODO optDependencies (depopts) */
   source: Types.PendingSource.t,
   exportedEnv: list((string, (string, string))),
@@ -314,6 +314,7 @@ let parseManifest = (info, {file_contents, file_name}) => {
     devDeps: devDeps |> List.map(toDepSource),
     peerDeps: [], /* TODO peer deps */
     optDependencies: depopts |> List.map(toDepSource),
+    available: true, /* TODO */
     source: Types.PendingSource.NoSource,
     exportedEnv: [],
   };
