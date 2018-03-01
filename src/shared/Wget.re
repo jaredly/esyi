@@ -9,7 +9,17 @@ let get = url => {
     String.length(newData);
   });
   Curl.perform(t);
+  let response = Curl.getinfo(t, Curl.CURLINFO_HTTP_CODE);
   Curl.cleanup(t);
   Curl.global_cleanup();
-  data^
+  switch (response) {
+  | Curl.CURLINFO_Long(200) => {
+    Some(data^)
+  }
+  | Curl.CURLINFO_Long(num) => {
+    print_endline("Url response " ++ url ++ " was " ++ string_of_int(num));
+    None
+  }
+  | _ => failwith("bad curl result")
+  };
 }
