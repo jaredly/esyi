@@ -278,6 +278,23 @@ let makeRequest = (deps, state) => {
  *
  */
 
+let lockDownRef = (url, ref) => {
+  let cmd = "git ls-remote " ++ url ++ " " ++ ref;
+  let (output, success) = Shared.ExecCommand.execSync(~cmd, ());
+  if (success) {
+    switch (output) {
+    | [] => ref
+    | [line, ..._] => {
+      let ref = String.split_on_char('\t', line) |> List.hd;
+      ref
+    }
+    }
+  } else {
+    print_endline("Failed to execute git ls-remote " ++ cmd);
+    ref
+  }
+};
+
 let lockDownSource = pendingSource => switch pendingSource {
 | Types.PendingSource.NoSource => Types.Source.NoSource
 | Archive(url, None) => {
@@ -285,13 +302,15 @@ let lockDownSource = pendingSource => switch pendingSource {
   Types.Source.Archive(url, "fake checksum")
 }
 | Archive(url, Some(checksum)) => Types.Source.Archive(url, checksum)
-| GitSource(url, None) => {
+| GitSource(url, ref) => {
+  let ref = Shared.Infix.(ref |? "master");
   /** TODO getting HEAD */
-  "git ls-remote git://github.com/alainfrisch/ppx_tools.git HEAD";
-  Types.Source.GitSource(url, "HEAD")
+  Types.Source.GitSource(url, lockDownRef(url, ref))
 }
-| GitSource(url, Some(sha)) => Types.Source.GitSource(url, sha)
-| GithubSource(user, name, ref) => Shared.Infix.(Types.Source.GithubSource(user, name, ref |? "master"))
+| GithubSource(user, name, ref) => {
+  let ref = Shared.Infix.(ref |? "master");
+  Types.Source.GithubSource(user, name, lockDownRef("git://github.com/" ++ user ++ "/" ++ name ++ ".git", ref))
+}
 };
 
 let rec solveDeps = (cache, deps) => {
