@@ -63,7 +63,7 @@ type depSource =
   | Git(string)
   ;
 
-let resolvedPrefix = "esyi2-";
+let resolvedPrefix = "esyi3-";
 
 [@deriving yojson]
 type dep = (string, depSource);

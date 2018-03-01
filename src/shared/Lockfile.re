@@ -73,6 +73,8 @@ type solvedDep = {
   opamFile: option(string),
   unpackedLocation: string,
   buildDeps: list((string, realVersion)),
+  requestedDeps: list(Types.dep),
+  requestedBuildDeps: list(Types.dep)
 }
 
 /* [@deriving yojson]

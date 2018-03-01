@@ -96,7 +96,7 @@ let rec tryConvertingOpamFromNpm = version => {
   open Shared.Types;
   version |> Shared.GenericVersion.map(opam => {
     /* try stripping the patch version */
-    print_endline("in the guts " ++ Shared.Types.viewOpamConcrete(opam));
+    /* print_endline("in the guts " ++ Shared.Types.viewOpamConcrete(opam)); */
     switch opam {
     /* yay jbuilder */
     | Alpha("", Some(Num(major, Some(Alpha(".", Some(Num(minor, Some(Alpha(".", Some(Num(0, Some(Alpha("-beta", rest))))))))))))) => {
@@ -110,21 +110,8 @@ let rec tryConvertingOpamFromNpm = version => {
   });
 };
 
-/* let maybeFindOpamNpm = (available, opamVersion, realVersionCache) => {
-  /* available |> List.filter(package => {
-    switch (Hashtbl.find(realVersionCache, (package.Cudf.package, package.Cudf.version))) {
-    | exception Not_found => failwith("Trying to find a package not in the versioncache")
-    | `Opam(someVersion) => {
-      opamMatchesIfYourePretendingToBeNpm(opamVersion, someVersion)
-    }
-    | _ => false
-    }
-  }) */
-}; */
-
 let cudfDep = (owner, state, (name, source)) => {
   let available = Cudf.lookup_packages(state.universe, name);
-  let num = List.length(available);
   let matching = available
   |> List.filter(matchesSource(source, state.lookupRealVersion));
   let final = (if (matching == []) {
@@ -135,7 +122,6 @@ let cudfDep = (owner, state, (name, source)) => {
       /* print_endline(Shared.GenericVersion.view(Shared.Types.viewOpamConcrete, nonNpm)); */
       available |> List.filter(matchesSource(Opam(nonNpm), state.lookupRealVersion))
     }
-    /* maybeFindOpamNpm(available, opamVersionRange, state.lookupRealVersion) */
     | _ => []
     };
     switch hack {
@@ -321,10 +307,12 @@ let rec solveDeps = (cache, deps) => {
   } else {
 
     /** This is where most of the work happens, file io, network requests, etc. */
+    print_endline("adding everyrthing to the universe");
     List.iter(addToUniverse(state), deps);
 
     let request = makeRequest(deps, state);
     let preamble = Cudf.default_preamble;
+    print_endline("Running the SMT solver");
     /** Here we invoke the solver! Might also take a while, but probably won't */
     switch (Mccs.resolve_cudf(~verbose=true, ~timeout=5., "-notuptodate", (preamble, state.universe, request))) {
     | None => failwith("Unable to resolve")
@@ -341,11 +329,13 @@ let rec solveDeps = (cache, deps) => {
         let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(state.cache.manifests, (p.Cudf.package, version))) {
         | Not_found => failwith("BAD NEWS no manifest for you")
         };
+        let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest);
         ([{
           Lockfile.name: p.Cudf.package,
           version: version,
-          source:
-          lockDownSource(switch version {
+          requestedDeps,
+          requestedBuildDeps,
+          source: lockDownSource(switch version {
           | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
           | _ => Manifest.getArchive(manifest)}) ,
           opamFile: getOpamFile(manifest),
@@ -366,6 +356,7 @@ and processBuildDeps = (cache, deps) => {
     }
   });
   let toInstall = unmetDeps |> List.map(((name, req)) => {
+    print_endline(name);
     let available = getAvailableVersions(cache, (name, req));
     let work = List.find_all(version => satisfies(toRealVersion(version), req), available);
     /* print_endline(name ++ ": " ++ Types.viewReq(req)); */
@@ -450,13 +441,16 @@ let solve = (config, manifest) => {
         let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(cache.manifests, (key, realVersion))) {
         | Not_found => failwith("BAD NEWS no manifest for you")
         };
+        let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest);
         ({
-        Lockfile.name: key,
-        source: lockDownSource(Manifest.getArchive(manifest)),
-        opamFile: getOpamFile(manifest),
-        version: realVersion,
-        unpackedLocation: "",
-        buildDeps: List.map(resolveBuildDep(cache.allBuildDeps), buildDeps)
+          Lockfile.name: key,
+          source: lockDownSource(Manifest.getArchive(manifest)),
+          opamFile: getOpamFile(manifest),
+          version: realVersion,
+          unpackedLocation: "",
+          requestedDeps,
+          requestedBuildDeps,
+          buildDeps: List.map(resolveBuildDep(cache.allBuildDeps), buildDeps)
         }, List.map(addBuildDepsForSolvedDep(cache), solvedDeps),)
     })
     ), ...res],

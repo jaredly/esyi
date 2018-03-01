@@ -22,14 +22,18 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 - [x] get jbuilder building
 - [x] get [the test repository] building!
 - [x] handle opam versions correctly `(>= 1.2.0 & < 1.3.0)`
+- [x] respect the "available" flag in `opam`
+- [x] get tsdl building ok
+- [x] get reason-wall-demo building!
 
 ## Need to work generally
 
 - [ ] have the ocaml peerdependency version actually matter (I ignore the version currently)
-- [ ] respect the "available" flag in `opam`
+- [ ] grab & update esy-opam-overrides and opam-repository automatically
 
 ## Needed less urgently
 
+- [ ] use Lwt! So we can parallelize a ton of things
 - [ ] actually validate checksums
 - [ ] deciding what we want to do with devDependencies (currently they're dumped into build dependences)
 - [ ] make the generated lockfile a nicer format (maybe yaml/toml?)
@@ -38,6 +42,13 @@ But in ocaml this time. With a real solver, so we get good dependencies.
     - [ ] inflate from lockfile
     - [ ] check staleness
     - [ ] add/remove/upgrade deps
+
+## Needed for cross-platform
+
+- [ ] use Cohttp instead of shelling out to curl
+- [ ] maybe use an ocaml git client? instead of shelling out to git
+- [ ] use an ocaml decompression library instead of shelling out to tar
+- [ ] audit for "/" vs Filename.concat
 
 ## Later on
 

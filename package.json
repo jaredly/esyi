@@ -9,7 +9,7 @@
     "watcher": "watchexec -w lib -w bin npm run watch -- -s",
     "run": "esy jbuilder build src/bin/esyi.exe && esy jbuilder exec esyi ../testing && (cd ../testing && npm start)",
     "clean-run": "rm -rf ../testing/.esy-modules && npm run run",
-    "wall": "esy jbuilder build src/bin/esyi.exe && esy jbuilder exec esyi ../../games/reason-wall-demo",
+    "wall": "esy jbuilder build src/bin/esyi.exe && esy jbuilder exec esyi ../../games/reason-wall-demo && (cd ../../games/reason-wall-demo && esy b)",
     "clean-wall": "rm -rf ../../game/reason-wall-demo/.esy-modules && npm run wall",
     "test": "esy jbuilder build test/Test.exe && esy jbuilder exec test/Test.exe"
   },
