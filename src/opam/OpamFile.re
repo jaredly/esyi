@@ -283,10 +283,11 @@ let parseManifest = (info, {file_contents, file_name}) => {
   let patches = processStringList(findVariable("patches", file_contents));
   /** OPTIMIZE: only read the files when generating the lockfile */
   /* print_endline("Patches for " ++ file_name ++ " " ++ string_of_int(List.length(patches))); */
-  let ocamlRequirement = findVariable("available", file_contents) |?>> OpamAvailable.parseRange |? GenericVersion.Any;
+  let ocamlRequirement = findVariable("available", file_contents) |?>> OpamAvailable.getOCamlVersion |? GenericVersion.Any;
   /* We just don't support anything before 4.2.3 */
   let ourMinimumOcamlVersion = Npm.NpmVersion.parseConcrete("4.02.3");
   let isAVersionWeSupport = !Shared.GenericVersion.isTooLarge(Npm.NpmVersion.compare, ocamlRequirement, ourMinimumOcamlVersion);
+  let isAvailable = isAVersionWeSupport && findVariable("available", file_contents) |?>> OpamAvailable.getAvailability |? true;
   /* Npm.NpmVersion.matches(ocamlRequirement, ourMinimumOcamlVersion); */
   {
     fileName: file_name,
@@ -306,7 +307,7 @@ let parseManifest = (info, {file_contents, file_name}) => {
     devDeps: devDeps |> List.map(toDepSource),
     peerDeps: [], /* TODO peer deps */
     optDependencies: depopts |> List.map(toDepSource),
-    available: isAVersionWeSupport, /* TODO */
+    available: isAvailable, /* TODO */
     source: Types.PendingSource.NoSource,
     exportedEnv: [],
   };

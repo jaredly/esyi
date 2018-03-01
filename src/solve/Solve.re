@@ -130,10 +130,10 @@ let cudfDep = (owner, state, (name, source)) => {
   let final = (if (matching == []) {
     let hack = switch source {
     | Opam(opamVersionRange) => {
-      print_endline("Trying to convert from pseudo-npm");
+      /* print_endline("Trying to convert from pseudo-npm"); */
       let nonNpm = tryConvertingOpamFromNpm(opamVersionRange);
-      print_endline(Shared.GenericVersion.view(Shared.Types.viewOpamConcrete, nonNpm));
-        available |> List.filter(matchesSource(Opam(nonNpm), state.lookupRealVersion))
+      /* print_endline(Shared.GenericVersion.view(Shared.Types.viewOpamConcrete, nonNpm)); */
+      available |> List.filter(matchesSource(Opam(nonNpm), state.lookupRealVersion))
     }
     /* maybeFindOpamNpm(available, opamVersionRange, state.lookupRealVersion) */
     | _ => []
@@ -187,10 +187,8 @@ let getAvailableVersions = (cache, (name, source)) => {
     let matched = available
     |> List.filter(((version, path, i)) => OpamVersion.matches(semver, version));
     let matched = if (matched == []) {
-      print_endline("No matching versions for " ++ name ++ " when looking in the opam repo");
-      List.iter(((version, _, _)) => {
-        print_endline(Types.viewOpamConcrete(version));
-      }, available);
+      /* print_endline("No matching versions for " ++ name ++ " when looking in the opam repo");
+      List.iter(((version, _, _)) => print_endline(Types.viewOpamConcrete(version)), available); */
       available |> List.filter(((version, path, i)) => OpamVersion.matches(tryConvertingOpamFromNpm(semver), version))
     } else {
       matched

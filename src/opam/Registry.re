@@ -1,7 +1,7 @@
 
 open Shared;
 
-let filterNils = items => items |> List.filter(x => x != None) |> List.map((Some(x)) => x);
+let filterNils = items => items |> List.filter(x => x != None) |> List.map(item => switch item { | Some(x) => x | None => assert(false)});
 
 let getFromOpamRegistry = (config, fullName) => {
   let name = OpamFile.withoutScope(fullName);
@@ -18,6 +18,7 @@ let getFromOpamRegistry = (config, fullName) => {
           OpamVersion.parseConcrete(String.concat(".", items))
         }
         };
+        /* PERF: we should cache this, instead of re-parsing it later again */
         let manifest = OpamFile.parseManifest((name, semver), OpamParser.file(base /+ entry /+ "opam"));
         if (!manifest.OpamFile.available) {
           None
