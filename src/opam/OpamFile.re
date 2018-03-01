@@ -105,8 +105,8 @@ let variables = ((name, version)) => [
 let cleanEnvName = Str.global_replace(Str.regexp("-"), "_");
 
 [@test [
-  ((Str.regexp("a\\(.\\)"), String.uppercase, "applae"), "PplE"),
-  ((Str.regexp("A\\(.\\)"), String.lowercase, "HANDS"), "HnDS"),
+  ((Str.regexp("a\\(.\\)"), String.uppercase_ascii, "applae"), "PplE"),
+  ((Str.regexp("A\\(.\\)"), String.lowercase_ascii, "HANDS"), "HnDS"),
 ]]
 let replaceGroupWithTransform = (rx, transform, string) => {
   Str.global_substitute(rx, s => transform(Str.matched_group(1, s)), string)
@@ -275,11 +275,6 @@ let getOpamFiles = (opam_name) => {
   }
 };
 
-/* TODO handle the "available: os = 'darwin'" thing */
-let determineOcamlVersion = available => {
-
-};
-
 let parseManifest = (info, {file_contents, file_name}) => {
   /* let baseDir = Filename.dirname(file_name); */
   let (deps, buildDeps, devDeps) = processDeps(file_name, findVariable("depends", file_contents));
@@ -288,6 +283,11 @@ let parseManifest = (info, {file_contents, file_name}) => {
   let patches = processStringList(findVariable("patches", file_contents));
   /** OPTIMIZE: only read the files when generating the lockfile */
   /* print_endline("Patches for " ++ file_name ++ " " ++ string_of_int(List.length(patches))); */
+  let ocamlRequirement = findVariable("available", file_contents) |?>> OpamAvailable.parseRange |? GenericVersion.Any;
+  /* We just don't support anything before 4.2.3 */
+  let ourMinimumOcamlVersion = Npm.NpmVersion.parseConcrete("4.02.3");
+  let isAVersionWeSupport = !Shared.GenericVersion.isTooLarge(Npm.NpmVersion.compare, ocamlRequirement, ourMinimumOcamlVersion);
+  /* Npm.NpmVersion.matches(ocamlRequirement, ourMinimumOcamlVersion); */
   {
     fileName: file_name,
     build: processCommandList(info, findVariable("build", file_contents)) @ [
@@ -300,21 +300,13 @@ let parseManifest = (info, {file_contents, file_name}) => {
       /* HACK? Not sure where/when this should be specified */
       ("@esy-ocaml/substs", Npm(GenericVersion.Any)),
       ("@esy-ocaml/esy-installer", Npm(GenericVersion.Any)),
-      ("ocaml",
-        Npm(
-          And(
-            /* We just don't support anything before 4.2.3 */
-            GenericVersion.AtLeast(Npm.NpmVersion.parseConcrete("4.2.3")),
-            findVariable("available", file_contents) |?>> OpamAvailable.parseRange |?
-              GenericVersion.Any
-          )
-      )),
+      ("ocaml", Npm(And(GenericVersion.AtLeast(ourMinimumOcamlVersion), ocamlRequirement))),
     ],
     buildDeps: buildDeps |> List.map(toDepSource),
     devDeps: devDeps |> List.map(toDepSource),
     peerDeps: [], /* TODO peer deps */
     optDependencies: depopts |> List.map(toDepSource),
-    available: true, /* TODO */
+    available: isAVersionWeSupport, /* TODO */
     source: Types.PendingSource.NoSource,
     exportedEnv: [],
   };

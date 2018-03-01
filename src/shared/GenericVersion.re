@@ -26,6 +26,19 @@ let rec matches = (compareInner, range, concrete) => {
   }
 };
 
+let rec isTooLarge = (compareInner, range, concrete) => {
+  switch range {
+  | Exactly(a) => compareInner(a, concrete) < 0
+  | Any => false
+  | GreaterThan(a) => false
+  | AtLeast(a) => false
+  | LessThan(a) => compareInner(a, concrete) <= 0
+  | AtMost(a) => compareInner(a, concrete) < 0
+  | And(a, b) => isTooLarge(compareInner, a, concrete) || isTooLarge(compareInner, b, concrete)
+  | Or(a, b) => isTooLarge(compareInner, a, concrete) && isTooLarge(compareInner, b, concrete)
+  }
+};
+
 let rec view = (viewInner, range) => {
   switch range {
   | Exactly(a) => viewInner(a)

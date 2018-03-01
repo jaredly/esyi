@@ -17,8 +17,8 @@ let fromPrefix = (op, version) => {
 };
 
 let rec parseRange = opamvalue => {
-  Shared.GenericVersion.Any
-  /* open OpamParserTypes;
+  /* Shared.GenericVersion.Any */
+  open OpamParserTypes;
   open Shared.GenericVersion;
   switch opamvalue {
   | Logop(_, `And, left, right) => {
@@ -26,12 +26,18 @@ let rec parseRange = opamvalue => {
   }
   | Logop(_, `Or, left, right) => Or(parseRange(left), parseRange(right))
   | Relop(_, rel, Ident(_, "ocaml-version"), String(_, version)) => fromPrefix(rel, version)
+  /* We don't support pre-4.02.3 anyway */
+  | Relop(_, `Neq, Ident(_, "compiler"), String(_, "4.02.1+BER")) => Any
+  | Relop(_, `Eq, Ident(_, "compiler"), String(_, _)) => Any
   | Relop(_, _rel, Ident(_, "opam-version"), _) => Any /* TODO should I care about this? */
+  | Relop(_, rel, Ident(_, "os"), String(_, version)) => Any
+  | Pfxop(_, `Not, Ident(_, "preinstalled")) => Any
+  | Ident(_, "preinstalled") => Any
   | Option(_, contents, options) => {
     print_endline("Ignoring option: " ++ (options |> List.map(OpamPrinter.value) |> String.concat(" .. ")));
     parseRange(contents)
   }
-  /* | List(_, items) => {
+  | List(_, items) => {
     let rec loop = items => switch items {
     | [] => Any
     | [item] => parseRange(item)
@@ -46,10 +52,10 @@ let rec parseRange = opamvalue => {
     | [item, ...rest] => And(parseRange(item), loop(rest))
     };
     loop(items)
-  } */
+  }
   | y => {
     print_endline("Unexpected option -- pretending its any " ++ OpamPrinter.value(opamvalue));
     Any
   }
-  } */
+  }
 };

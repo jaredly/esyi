@@ -127,7 +127,7 @@ let cudfDep = (owner, state, (name, source)) => {
   let num = List.length(available);
   let matching = available
   |> List.filter(matchesSource(source, state.lookupRealVersion));
-  (if (matching == []) {
+  let final = (if (matching == []) {
     let hack = switch source {
     | Opam(opamVersionRange) => {
       print_endline("Trying to convert from pseudo-npm");
@@ -140,9 +140,15 @@ let cudfDep = (owner, state, (name, source)) => {
     };
     switch hack {
     | [] => {
-      print_endline("Requirement wrong " ++ owner ++ " wants " ++ name ++ " at version " ++ Types.viewReq(source));
-      available |> List.iter(package => print_endline(Lockfile.viewRealVersion(getRealVersion(state.lookupRealVersion, package))));
-      failwith("No package found for " ++ name ++ " when converting to a cudf dep (found " ++ string_of_int(num) ++ " incompatible versions)")
+      if (name == "ocaml") {
+        /* We know there are packages that want versions of ocaml we don't support, it's ok */
+        []
+      } else {
+        print_endline("🛑 🛑 🛑  Requirement unsatisfiable " ++ owner ++ " wants " ++ name ++ " at version " ++ Types.viewReq(source));
+        available |> List.iter(package => print_endline("  - " ++ Lockfile.viewRealVersion(getRealVersion(state.lookupRealVersion, package))));
+        []
+      }
+      /* failwith("No package found for " ++ name ++ " when converting to a cudf dep (found " ++ string_of_int(num) ++ " incompatible versions)") */
     }
     | matching => matching
     }
@@ -150,6 +156,8 @@ let cudfDep = (owner, state, (name, source)) => {
     matching
   })
   |> List.map(package => (package.Cudf.package, Some((`Eq, package.Cudf.version))));
+  /** If no matching packages, make a requirement for a package that doesn't exist. */
+  final == [] ? [(List.hd(available).Cudf.package, Some((`Eq, 10000000000)))] : final
 };
 
 let getAvailableVersions = (cache, (name, source)) => {
