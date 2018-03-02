@@ -11,6 +11,7 @@
     "clean-run": "rm -rf ../testing/.esy-modules && npm run run",
     "wall": "esy jbuilder build src/bin/esyi.exe && esy jbuilder exec esyi ../../games/reason-wall-demo && (cd ../../games/reason-wall-demo && esy b)",
     "clean-wall": "rm -rf ../../game/reason-wall-demo/.esy-modules && npm run wall",
+    "solve-wall": "esy jbuilder exec esyi solve ../../games/reason-wall-demo/",
     "test": "esy jbuilder build test/Test.exe && esy jbuilder exec test/Test.exe"
   },
   "esy": {

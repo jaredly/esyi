@@ -30,7 +30,6 @@ let solve = (basedir) => {
   Yojson.Safe.pretty_to_channel(chan, json);
   close_out(chan);
   Shared.Files.writeFile(basedir /+ "esyi.lock", simplifiedLock(lockfile)) |> ignore
-
 };
 
 let fetch = (basedir) => {
