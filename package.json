@@ -36,7 +36,7 @@
     "lwt-node": "*",
     "@jaredly/testre": "*",
     "testre-ppx": "*",
-    "@opam/opam-file-format": "*",
+    "@opam/opam-file-format": "2.0.0~beta5",
     "@opam/lwt": "^3.1.0",
     "@opam/reason": "^3.0.0",
     "@opam/jbuilder": "^1.0+beta16",

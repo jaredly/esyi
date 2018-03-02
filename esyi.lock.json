@@ -44,7 +44,36 @@
     [ "lwt-node", [ "Npm", [ "Any" ] ] ],
     [ "@jaredly/testre", [ "Npm", [ "Any" ] ] ],
     [ "testre-ppx", [ "Npm", [ "Any" ] ] ],
-    [ "@opam/opam-file-format", [ "Opam", [ "Any" ] ] ],
+    [
+      "@opam/opam-file-format",
+      [
+        "Opam",
+        [
+          "Exactly",
+          [
+            "Alpha",
+            "",
+            [
+              "Num",
+              2,
+              [
+                "Alpha",
+                ".",
+                [
+                  "Num",
+                  0,
+                  [
+                    "Alpha",
+                    ".",
+                    [ "Num", 0, [ "Alpha", "~beta", [ "Num", 5, null ] ] ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+    ],
     [
       "@opam/lwt",
       [
@@ -3122,6 +3151,51 @@
       "requestedBuildDeps": []
     },
     {
+      "name": "@opam/opam-file-format",
+      "version": [
+        "Opam",
+        [
+          "Alpha",
+          "",
+          [
+            "Num",
+            2,
+            [
+              "Alpha",
+              ".",
+              [
+                "Num",
+                0,
+                [
+                  "Alpha",
+                  ".",
+                  [ "Num", 0, [ "Alpha", "~beta", [ "Num", 5, null ] ] ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      "source": [
+        "Archive",
+        "https://github.com/ocaml/opam-file-format/archive/2.0.0-beta5.tar.gz",
+        "5408798ca3af6e36379dd34b1b618b9c"
+      ],
+      "opamFile":
+        "/Users/jared/.esyi/opam-repository/packages/opam-file-format/opam-file-format.2.0.0~beta5/opam",
+      "unpackedLocation": "",
+      "buildDeps": [],
+      "requestedDeps": [
+        [ "@esy-ocaml/substs", [ "Npm", [ "Any" ] ] ],
+        [ "@esy-ocaml/esy-installer", [ "Npm", [ "Any" ] ] ],
+        [
+          "ocaml",
+          [ "Npm", [ "And", [ "AtLeast", [ 4, 2, 3, null ] ], [ "Any" ] ] ]
+        ]
+      ],
+      "requestedBuildDeps": []
+    },
+    {
       "name": "@opam/camomile",
       "version": [
         "Opam",
@@ -4301,43 +4375,6 @@
               [ "AtLeast", [ 4, 4, 1, null ] ]
             ]
           ]
-        ]
-      ],
-      "requestedBuildDeps": []
-    },
-    {
-      "name": "@opam/opam-file-format",
-      "version": [
-        "Opam",
-        [
-          "Alpha",
-          "",
-          [
-            "Num",
-            2,
-            [
-              "Alpha",
-              ".",
-              [ "Num", 0, [ "Alpha", "~alpha", [ "Num", 5, null ] ] ]
-            ]
-          ]
-        ]
-      ],
-      "source": [
-        "Archive",
-        "https://github.com/ocaml/opam-file-format/archive/2.0-alpha5.tar.gz",
-        "2ccdf87e2bd8ed8541dda1d3369b3199"
-      ],
-      "opamFile":
-        "/Users/jared/.esyi/opam-repository/packages/opam-file-format/opam-file-format.2.0~alpha5/opam",
-      "unpackedLocation": "",
-      "buildDeps": [],
-      "requestedDeps": [
-        [ "@esy-ocaml/substs", [ "Npm", [ "Any" ] ] ],
-        [ "@esy-ocaml/esy-installer", [ "Npm", [ "Any" ] ] ],
-        [
-          "ocaml",
-          [ "Npm", [ "And", [ "AtLeast", [ 4, 2, 3, null ] ], [ "Any" ] ] ]
         ]
       ],
       "requestedBuildDeps": []

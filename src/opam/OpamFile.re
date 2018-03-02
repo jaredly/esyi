@@ -276,6 +276,13 @@ let getOpamFiles = (opam_name) => {
   }
 };
 
+let getSubsts = opamvalue => (switch opamvalue {
+| None => []
+| Some(List(_, items)) => items |> List.map(item => switch item { | String(_, text) => text | _ => failwith("Bad substs item")})
+| Some(String(_, text)) => [text]
+| Some(other) => failwith("Bad substs value " ++ OpamPrinter.value(other))
+}) |> List.map(filename => ["substs", filename ++ ".in"]);
+
 let parseManifest = (info, {file_contents, file_name}) => {
   /* let baseDir = Filename.dirname(file_name); */
   /* NOTE: buildDeps are not actually buildDeps as we think of them, because they can also have runtime components. */
@@ -293,7 +300,9 @@ let parseManifest = (info, {file_contents, file_name}) => {
   /* Npm.NpmVersion.matches(ocamlRequirement, ourMinimumOcamlVersion); */
   {
     fileName: file_name,
-    build: processCommandList(info, findVariable("build", file_contents)) @ [
+    build:
+    getSubsts(findVariable("substs", file_contents)) @
+    processCommandList(info, findVariable("build", file_contents)) @ [
       ["sh", "-c", "(esy-installer || true)"]
     ],
     install: processCommandList(info, findVariable("install", file_contents)),

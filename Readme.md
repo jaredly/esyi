@@ -29,6 +29,7 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 ## Need to work generally
 
 - [ ] have the ocaml peerdependency version actually matter (I ignore the version currently)
+- [ ] ~ should resolve before the empty string in opam land
 - [ ] grab & update esy-opam-overrides and opam-repository automatically
 
 ## Needed less urgently
