@@ -30,10 +30,7 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 - [x] be able to install its own deps!
 - [x] ~ should resolve before the empty string in opam land
 - [x] make the "fetch" step not depend on having `opam-repository` around
-
-## Need to work generally
-
-- [ ] grab & update esy-opam-overrides and opam-repository automatically
+- [x] grab & update esy-opam-overrides and opam-repository automatically
 
 ## After that
 
@@ -64,12 +61,3 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 - [ ] maybe fetch tarballs from the opam mirror directly
 - [ ] maybe use a global cache for fetched things? currently using a project-local cache
 - [ ] support multiple architecture targets!
-
-This looks like... having multiple
-
-## Currently required setup
-
-```
-g clone https://github.com/esy-ocaml/esy-opam-override ~/.esyi/esy-opam-override
-g clone https://github.com/ocaml/opam-repository ~/.esyi/opam-repository --depth=1 --single-branch --branch=master
-```

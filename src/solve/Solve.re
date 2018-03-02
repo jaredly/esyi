@@ -435,7 +435,24 @@ let addBuildDepsForSolvedDep = (cache, solvedDep) => {
   }
 };
 
+let expectSuccess = (msg, v) => if (v) { () } else { failwith(msg) };
+
+let ensureGitRepo = (source, dest) => {
+  if (!Shared.Files.exists(dest)) {
+    Shared.Files.mkdirp(Filename.dirname(dest));
+    Shared.ExecCommand.execSync(~cmd="git clone " ++ source ++ " " ++ dest, ()) |> snd |> expectSuccess("Unable to clone " ++ source)
+  } else {
+    Shared.ExecCommand.execSync(~cmd="cd " ++ dest ++ " && git pull", ()) |> snd |> expectSuccess("Unable tp update " ++ dest)
+  }
+};
+
+let checkRepositories = config => {
+  ensureGitRepo("https://github.com/esy-ocaml/esy-opam-override", config.Shared.Types.esyOpamOverrides);
+  ensureGitRepo("https://github.com/ocaml/opam-repository", config.Shared.Types.opamRepository);
+};
+
 let solve = (config, manifest) => {
+  checkRepositories(config);
   let cache = {
     config,
     opamOverrides: OpamOverrides.getOverrides(config.Types.esyOpamOverrides),
