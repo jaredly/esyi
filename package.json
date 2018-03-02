@@ -37,21 +37,21 @@
     "@jaredly/testre": "*",
     "testre-ppx": "*",
     "@opam/opam-file-format": "*",
-    "@opam/lwt": "^3.1.0"
+    "@opam/lwt": "^3.1.0",
+    "@opam/reason": "^3.0.0",
+    "@opam/jbuilder": "^1.0+beta16",
+    "@opam/merlin": "^3.0.5",
+    "@opam/alcotest": "*",
+    "ocaml": "~4.6.000"
   },
   "// testre": "link:./../ppx_test/runtime",
   "// testre-ppx": "link:./../ppx_test/ppx",
   "buildDependencies": {
-    "@opam/jbuilder": "^1.0+beta16",
-    "@opam/reason": "3.0.4"
   },
   "peerDependencies": {
     "ocaml": "~4.6.000"
   },
   "devDependencies": {
-    "@opam/merlin": "^3.0.5",
-    "@opam/alcotest": "*",
-    "ocaml": "~4.6.000"
   },
     "resolutions": {
     "**/@opam/result": "1.2.0"

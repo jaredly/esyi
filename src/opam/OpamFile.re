@@ -278,6 +278,7 @@ let getOpamFiles = (opam_name) => {
 
 let parseManifest = (info, {file_contents, file_name}) => {
   /* let baseDir = Filename.dirname(file_name); */
+  /* NOTE: buildDeps are not actually buildDeps as we think of them, because they can also have runtime components. */
   let (deps, buildDeps, devDeps) = processDeps(file_name, findVariable("depends", file_contents));
   let (depopts, _, _) = processDeps(file_name, findVariable("depopts", file_contents));
   let files = getOpamFiles(file_name);
@@ -298,13 +299,14 @@ let parseManifest = (info, {file_contents, file_name}) => {
     install: processCommandList(info, findVariable("install", file_contents)),
     patches,
     files,
-    deps: (deps |> List.map(toDepSource)) @ [
+    deps: ((deps @ buildDeps) |> List.map(toDepSource)) @ [
       /* HACK? Not sure where/when this should be specified */
       ("@esy-ocaml/substs", Npm(GenericVersion.Any)),
       ("@esy-ocaml/esy-installer", Npm(GenericVersion.Any)),
       ("ocaml", Npm(And(GenericVersion.AtLeast(ourMinimumOcamlVersion), ocamlRequirement))),
     ],
-    buildDeps: buildDeps |> List.map(toDepSource),
+    buildDeps: [],
+    /* buildDeps |> List.map(toDepSource), */
     devDeps: devDeps |> List.map(toDepSource),
     peerDeps: [], /* TODO peer deps */
     optDependencies: depopts |> List.map(toDepSource),

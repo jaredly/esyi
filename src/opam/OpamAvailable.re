@@ -77,7 +77,8 @@ let rec getAvailability = opamvalue => {
     false
   }
   | Relop(_, _rel, Ident(_, "opam-version"), _) => true
-  | Relop(_, rel, Ident(_, "os"), String(_, "darwin")) => true
+  | Relop(_, `Eq, Ident(_, "os"), String(_, "darwin")) => true
+  | Relop(_, `Neq, Ident(_, "os"), String(_, "darwin")) => false
   | Relop(_, rel, Ident(_, "os"), String(_, os)) => {
     print_endline("Wants an OS " ++ os ++ "... assuming we don't have it");
     false
