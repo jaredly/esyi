@@ -59,7 +59,8 @@ let processDeps = (fileName, deps) => {
   | None => []
   | Some(List(_, items)) => items
   | Some(Group(_, items)) => items
-  | _ => failwith("Can't handle the dependencies")
+  | Some(String(pos, value)) => [String(pos, value)]
+  | Some(contents) => failwith("Can't handle the dependencies " ++ fileName ++ " " ++ OpamPrinter.value(contents))
   };
 
   List.fold_left(

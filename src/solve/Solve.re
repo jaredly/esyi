@@ -143,7 +143,7 @@ let cudfDep = (owner, state, (name, source)) => {
   })
   |> List.map(package => (package.Cudf.package, Some((`Eq, package.Cudf.version))));
   /** If no matching packages, make a requirement for a package that doesn't exist. */
-  final == [] ? [(List.hd(available).Cudf.package, Some((`Eq, 10000000000)))] : final
+  final == [] ? [("**not-a-packge%%%", Some((`Eq, 10000000000)))] : final
 };
 
 let getAvailableVersions = (cache, (name, source)) => {
@@ -298,7 +298,7 @@ let lockDownRef = (url, ref) => {
 let lockDownSource = pendingSource => switch pendingSource {
 | Types.PendingSource.NoSource => Types.Source.NoSource
 | Archive(url, None) => {
-  print_endline("Pretending to get a checksum for " ++ url);
+  /* print_endline("Pretending to get a checksum for " ++ url); */
   Types.Source.Archive(url, "fake checksum")
 }
 | Archive(url, Some(checksum)) => Types.Source.Archive(url, checksum)
@@ -326,25 +326,25 @@ let rec solveDeps = (cache, deps) => {
   } else {
 
     /** This is where most of the work happens, file io, network requests, etc. */
-    print_endline("adding everyrthing to the universe");
+    /* print_endline("adding everyrthing to the universe"); */
     List.iter(addToUniverse(state), deps);
 
     let request = makeRequest(deps, state);
     let preamble = Cudf.default_preamble;
-    print_endline("Running the SMT solver");
+    /* print_endline("Running the SMT solver"); */
     /** Here we invoke the solver! Might also take a while, but probably won't */
     switch (Mccs.resolve_cudf(~verbose=true, ~timeout=5., "-notuptodate", (preamble, state.universe, request))) {
     | None => failwith("Unable to resolve")
     | Some((a, universe)) => {
       let packages = Cudf.get_packages(~filter=(p => p.Cudf.installed), universe);
-      print_endline("Installed packages:");
+      /* print_endline("Installed packages:"); */
       packages
       |> List.filter(p => p.Cudf.package != rootName)
       |> List.fold_left(((deps, buildDeps), p) => {
         let version = try(Hashtbl.find(state.lookupRealVersion, (p.Cudf.package, p.Cudf.version))) {
         | Not_found => failwith("BAD NEWS version somehow got lost")
         };
-        print_endline(p.Cudf.package ++ " @ " ++ Lockfile.viewRealVersion(version));
+        /* print_endline(p.Cudf.package ++ " @ " ++ Lockfile.viewRealVersion(version)); */
         let (manifest, _myDeps, myBuildDeps) = try(Hashtbl.find(state.cache.manifests, (p.Cudf.package, version))) {
         | Not_found => failwith("BAD NEWS no manifest for you")
         };
@@ -375,10 +375,13 @@ and processBuildDeps = (cache, deps) => {
     }
   });
   let toInstall = unmetDeps |> List.map(((name, req)) => {
-    print_endline(name);
+    /* print_endline(name); */
     let available = getAvailableVersions(cache, (name, req));
     let work = List.find_all(version => satisfies(toRealVersion(version), req), available);
     /* print_endline(name ++ ": " ++ Types.viewReq(req)); */
+    if (work == []) {
+      failwith("No working versions found for " ++ name ++ " " ++ Shared.Types.viewReq(req));
+    };
     let got = work |> List.sort((a, b) => sortRealVersions(toRealVersion(b), toRealVersion(a))) |> List.hd;
     /* print_endline("Chose " ++ Lockfile.viewRealVersion(toRealVersion(got))); */
     (name, got);
@@ -386,7 +389,7 @@ and processBuildDeps = (cache, deps) => {
 
   print_endline("Chose these dev deps");
   let allBuildDeps = toInstall |> List.map(((name, versionPlus)) => {
-    print_endline(name ++ ": " ++ Lockfile.viewRealVersion(toRealVersion(versionPlus)));
+    /* print_endline(name ++ ": " ++ Lockfile.viewRealVersion(toRealVersion(versionPlus))); */
     let (manifest, deps, buildDeps) = getCachedManifest(cache.opamOverrides, cache.manifests, (name, versionPlus));
     let (solvedDeps, collectedBuildDeps) = solveDeps(cache, deps);
 

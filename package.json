@@ -12,6 +12,8 @@
     "wall": "esy jbuilder build src/bin/esyi.exe && esy jbuilder exec esyi ../../games/reason-wall-demo && (cd ../../games/reason-wall-demo && esy b)",
     "clean-wall": "rm -rf ../../game/reason-wall-demo/.esy-modules && npm run wall",
     "solve-wall": "esy jbuilder exec esyi solve ../../games/reason-wall-demo/",
+    "self-install": "_build/install/default/bin/esyi .",
+    "self-solve": "_build/install/default/bin/esyi solve .",
     "test": "esy jbuilder build test/Test.exe && esy jbuilder exec test/Test.exe"
   },
   "esy": {
@@ -40,11 +42,8 @@
   "// testre": "link:./../ppx_test/runtime",
   "// testre-ppx": "link:./../ppx_test/ppx",
   "buildDependencies": {
-    "@opam/jbuilder": "^1.0-beta16",
-    "@opam/menhir": "*",
-    "@opam/reason": "3.0.4",
-    "@opam/ocamllex": "*",
-    "@esy-ocaml/esy-installer": "^0.0.0"
+    "@opam/jbuilder": "^1.0+beta16",
+    "@opam/reason": "3.0.4"
   },
   "peerDependencies": {
     "ocaml": "~4.6.000"
