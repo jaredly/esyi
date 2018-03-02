@@ -65,12 +65,16 @@ type realVersion = [
   | `Git(string)
 ];
 
+type json = Yojson.Safe.json;
+let json_to_yojson = x => x;
+let json_of_yojson = x => Result.Ok(x);
+
 [@deriving yojson]
 type solvedDep = {
   name: string,
   version: realVersion,
   source: Types.Source.t,
-  opamFile: option(string),
+  opamFile: option((json, list((string, string)), list(string))),
   unpackedLocation: string,
   buildDeps: list((string, realVersion)),
   requestedDeps: list(Types.dep),

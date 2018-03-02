@@ -253,10 +253,10 @@ let makeRequest = (deps, state) => {
   }
 };
 
- let getOpamFile = manifest => {
+ let getOpamFile = (manifest, opamOverrides, name, version) => {
    switch manifest {
    | `PackageJson(_) => None
-   | `OpamFile({OpamFile.fileName}) => Some(fileName)
+   | `OpamFile({OpamFile.fileName}) => Some(OpamFile.toPackageJson(opamOverrides, fileName, name, version))
    }
  };
 
@@ -331,6 +331,7 @@ let rec solveDeps = (cache, deps) => {
 
     let request = makeRequest(deps, state);
     let preamble = Cudf.default_preamble;
+    /* let opamOverrides = Opam.OpamOverrides.getOverrides(config.Types.esyOpamOverrides); */
     /* print_endline("Running the SMT solver"); */
     /** Here we invoke the solver! Might also take a while, but probably won't */
     switch (Mccs.resolve_cudf(~verbose=true, ~timeout=5., "-notuptodate", (preamble, state.universe, request))) {
@@ -357,7 +358,7 @@ let rec solveDeps = (cache, deps) => {
           source: lockDownSource(switch version {
           | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
           | _ => Manifest.getArchive(manifest)}) ,
-          opamFile: getOpamFile(manifest),
+          opamFile: getOpamFile(manifest, cache.opamOverrides, p.Cudf.package, version),
           unpackedLocation: "",
           buildDeps: [],
         }, ...deps], myBuildDeps @ buildDeps)
@@ -467,7 +468,8 @@ let solve = (config, manifest) => {
         ({
           Lockfile.name: key,
           source: lockDownSource(Manifest.getArchive(manifest)),
-          opamFile: getOpamFile(manifest),
+          /* opamFile: getOpamFile(manifest), */
+          opamFile: getOpamFile(manifest, cache.opamOverrides, key, realVersion),
           version: realVersion,
           unpackedLocation: "",
           requestedDeps,

@@ -48,7 +48,7 @@ let absname = (name, version) => {
   name ++ "__" ++ Lockfile.viewRealVersion(version)
 };
 
-let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFile, source}) => {
+let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) => {
   if (Files.isDirectory(dest)) {
     print_endline("Dependency exists -- assuming it is fine " ++ dest)
     /* failwith("Dependency directory already exists: " ++ dest) */
@@ -103,12 +103,12 @@ let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFi
       };
       addResolvedFieldToPackageJson(packageJson, name, version);
     }
-    | Some(opamFile) => {
+    | Some((packageJson, files, patches)) => {
       if (Files.exists(dest /+ "esy.json")) {
         Unix.unlink(dest /+ "esy.json");
       };
-      let (packageJson, files, patches) = OpamFile.toPackageJson(opamOverrides, opamFile, name, version);
-      let raw = Yojson.Basic.pretty_to_string(packageJson);
+      /* let (packageJson, files, patches) = OpamFile.toPackageJson(opamOverrides, opamFile, name, version); */
+      let raw = Yojson.Basic.pretty_to_string(Yojson.Safe.to_basic(packageJson));
       Files.writeFile(dest /+ "package.json", raw) |> expectSuccess("could not write package.json");
       files |> List.iter(((relpath, contents)) => {
         Files.mkdirp(Filename.dirname(dest /+ relpath));
@@ -129,20 +129,20 @@ let unpackArchive = (opamOverrides, dest, cache, {Lockfile.name, version, opamFi
   }
 };
 
-let rec fetchDep = (opamOverrides, modcache, cache, {Lockfile.name, version} as dep, childDeps) => {
+let rec fetchDep = (modcache, cache, {Lockfile.name, version} as dep, childDeps) => {
   let base = modcache /+ absname(name, version);
   if (Files.exists(base)) {
     /* print_endline("Found " ++ base ++ " assuming its fine"); */
     ()
   } else {
-    unpackArchive(opamOverrides, base, cache, dep);
+    unpackArchive(base, cache, dep);
 
     childDeps |> List.iter((childDep) => {
       let dest = base /+ "node_modules" /+ childDep.Shared.Lockfile.name;
       if (Files.exists(dest)) {
         print_endline("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
       } else {
-        fetchDep(opamOverrides, modcache, cache, childDep, []);
+        fetchDep(modcache, cache, childDep, []);
         Files.mkdirp(Filename.dirname(dest));
         symlink(modcache /+ absname(childDep.name, childDep.version), dest)
       }
@@ -161,7 +161,7 @@ let rec fetchDep = (opamOverrides, modcache, cache, {Lockfile.name, version} as 
 };
 
 let fetch = (config, basedir, lockfile) => {
-  let opamOverrides = Opam.OpamOverrides.getOverrides(config.Types.esyOpamOverrides);
+  /* let opamOverrides = Opam.OpamOverrides.getOverrides(config.Types.esyOpamOverrides); */
   let cache = basedir /+ ".esy-cache" /+ "archives";
   Files.mkdirp(cache);
 
@@ -171,7 +171,7 @@ let fetch = (config, basedir, lockfile) => {
 
   Files.mkdirp(basedir /+ "node_modules");
   lockfile.solvedDeps |> List.iter((dep) => {
-    fetchDep(opamOverrides, modcache, cache, dep, []);
+    fetchDep(modcache, cache, dep, []);
 
     let dest = basedir /+ "node_modules" /+ dep.name;
     Files.mkdirp(Filename.dirname(dest));
@@ -193,7 +193,7 @@ let fetch = (config, basedir, lockfile) => {
   lockfile.allBuildDeps |> List.iter(((name, versions)) => {
     switch versions {
     | [(dep, childDeps)] => {
-        fetchDep(opamOverrides, modcache, cache, dep, childDeps);
+        fetchDep(modcache, cache, dep, childDeps);
     }
     | _ => failwith("Can't handle multiple versions just yet")
     }

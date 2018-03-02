@@ -26,10 +26,11 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 - [x] get tsdl building ok
 - [x] get reason-wall-demo building!
 - [x] be able to install its own deps!
+- [x] ~ should resolve before the empty string in opam land
+- [x] make the "fetch" step not depend on having `opam-repository` around
 
 ## Need to work generally
 
-- [ ] ~ should resolve before the empty string in opam land
 - [ ] grab & update esy-opam-overrides and opam-repository automatically
 - [ ] have the ocaml peerdependency version actually matter (I ignore the version currently)
 
