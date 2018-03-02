@@ -51,7 +51,6 @@ let absname = (name, version) => {
 let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) => {
   if (Files.isDirectory(dest)) {
     print_endline("Dependency exists -- assuming it is fine " ++ dest)
-    /* failwith("Dependency directory already exists: " ++ dest) */
   } else {
     Files.mkdirp(dest);
 
@@ -94,7 +93,6 @@ let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) =>
     }
     };
 
-    /* print_endline("Checking " ++ dest /+ "package.json"); */
     let packageJson = dest /+ "package.json";
     switch opamFile {
     | None => {
@@ -107,7 +105,6 @@ let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) =>
       if (Files.exists(dest /+ "esy.json")) {
         Unix.unlink(dest /+ "esy.json");
       };
-      /* let (packageJson, files, patches) = OpamFile.toPackageJson(opamOverrides, opamFile, name, version); */
       let raw = Yojson.Basic.pretty_to_string(Yojson.Safe.to_basic(packageJson));
       Files.writeFile(dest /+ "package.json", raw) |> expectSuccess("could not write package.json");
       files |> List.iter(((relpath, contents)) => {
@@ -121,9 +118,6 @@ let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) =>
           ()
         ) |> snd |> expectSuccess("Failed to patch")
       });
-
-      /* Yojson.Basic.to_file(dest /+ "package.json", packageJson); */
-      /* print_endline("Wrote package.json out " ++ dest /+ "package.json") */
     }
     }
   }
@@ -161,7 +155,6 @@ let rec fetchDep = (modcache, cache, {Lockfile.name, version} as dep, childDeps)
 };
 
 let fetch = (config, basedir, lockfile) => {
-  /* let opamOverrides = Opam.OpamOverrides.getOverrides(config.Types.esyOpamOverrides); */
   let cache = basedir /+ ".esy-cache" /+ "archives";
   Files.mkdirp(cache);
 

@@ -2,6 +2,8 @@
 
 But in ocaml this time. With a real solver, so we get good dependencies.
 
+## Status: self-hosting! Also can install reason-wall-demo
+
 ## Completed
 
 - [x] parsing opam files & mostly converting the dependencies (I bail on the more complex boolean operations, pretending they are "any")
@@ -32,7 +34,6 @@ But in ocaml this time. With a real solver, so we get good dependencies.
 ## Need to work generally
 
 - [ ] grab & update esy-opam-overrides and opam-repository automatically
-- [ ] have the ocaml peerdependency version actually matter (I ignore the version currently)
 
 ## After that
 
