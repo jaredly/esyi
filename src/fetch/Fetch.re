@@ -154,7 +154,7 @@ let rec fetchDep = (modcache, cache, {Lockfile.name, version} as dep, childDeps)
   }
 };
 
-let fetch = (config, basedir, lockfile) => {
+let fetch = (basedir, lockfile) => {
   let cache = basedir /+ ".esy-cache" /+ "archives";
   Files.mkdirp(cache);
 

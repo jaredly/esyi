@@ -22,17 +22,13 @@ let solve = (basedir) => {
 };
 
 let fetch = (basedir) => {
-  let homeDir = homeDir();
   let json = Yojson.Safe.from_file(basedir /+ "esyi.lock.json");
   let lockfile = switch (Shared.Lockfile.lockfile_of_yojson(json)) {
   | Error(a) => failwith("Bad lockfile")
   | Ok(a) => a
   };
   Shared.Files.removeDeep(basedir /+ "node_modules");
-  Fetch.fetch({
-    Shared.Types.esyOpamOverrides: homeDir /+ ".esyi/esy-opam-override",
-    opamRepository: homeDir /+ ".esyi/opam-repository"
-  }, basedir, lockfile);
+  Fetch.fetch(basedir, lockfile);
 };
 
 Shared.Wget.init();
