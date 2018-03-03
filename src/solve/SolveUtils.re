@@ -133,3 +133,10 @@ let runSolver = (rootName, deps, universe) => {
   }
   }
 };
+
+let getOpamFile = (manifest, opamOverrides, name, version) => {
+  switch manifest {
+  | `PackageJson(_) => None
+  | `OpamFile({OpamFile.fileName}) => Some(OpamFile.toPackageJson(opamOverrides, fileName, name, version))
+  }
+};

@@ -31,6 +31,8 @@ let fetch = (basedir) => {
   Fetch.fetch(basedir, lockfile);
 };
 
+Printexc.record_backtrace(true);
+
 switch (Sys.argv) {
   | [|_, "solve", basedir|] => solve(basedir)
   | [|_, "fetch", basedir|] => fetch(basedir)
