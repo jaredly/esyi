@@ -6,6 +6,32 @@ let maybeStat = (path) =>
   | Unix.Unix_error(Unix.ENOENT, _, _) => None
   };
 
+let expectSuccess = (msg, v) => if (v) { () } else { failwith(msg) };
+
+[@test [
+  (("/a/b/c", "/a/b/d"), "../d"),
+  (("/a/b/c", "/a/b/d/e"), "../d/e"),
+  (("/a/b/c", "/d/e/f"), "../../../d/e/f"),
+  (("/a/b/c", "/a/b/c/d/e"), "./d/e"),
+]]
+let relpath = (base, path) => {
+  let rec loop = (bp, pp) => {
+    switch (bp, pp) {
+    | ([a, ...ra], [b, ...rb]) when a == b => loop(ra, rb)
+    | _ => (bp, pp)
+    }
+  };
+  let (base, path) = loop(String.split_on_char('/', base), String.split_on_char('/', path));
+  String.concat("/",
+  (base == [] ? ["."] : List.map((_) => "..", base))
+  @ path
+  )
+};
+
+let symlink = (source, dest) => {
+  Unix.symlink(relpath(Filename.dirname(dest), source), dest)
+};
+
 let readFile = path => {
   switch (maybeStat(path)) {
   | Some({Unix.st_kind: Unix.S_REG}) =>

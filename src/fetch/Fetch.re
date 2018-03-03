@@ -4,50 +4,24 @@ open Opam;
 
 let (/+) = Filename.concat;
 
-let consume = (fn, opt) => switch opt { | None => () | Some(x) => fn(x)};
-
-let expectSuccess = (msg, v) => if (v) { () } else { failwith(msg) };
-
-[@test [
-  (("/a/b/c", "/a/b/d"), "../d"),
-  (("/a/b/c", "/a/b/d/e"), "../d/e"),
-  (("/a/b/c", "/d/e/f"), "../../../d/e/f"),
-  (("/a/b/c", "/a/b/c/d/e"), "./d/e"),
-]]
-let relpath = (base, path) => {
-  let rec loop = (bp, pp) => {
-    switch (bp, pp) {
-    | ([a, ...ra], [b, ...rb]) when a == b => loop(ra, rb)
-    | _ => (bp, pp)
-    }
-  };
-  let (base, path) = loop(String.split_on_char('/', base), String.split_on_char('/', path));
-  String.concat("/",
-  (base == [] ? ["."] : List.map((_) => "..", base))
-  @ path
-  )
-};
-
-let symlink = (source, dest) => {
-  Unix.symlink(relpath(Filename.dirname(dest), source), dest)
-};
+let resolvedString = (name, version) => Types.resolvedPrefix ++ name ++ "--" ++ Lockfile.viewRealVersion(version);
 
 let addResolvedFieldToPackageJson = (filename, name, version) => {
   let json = switch (Yojson.Basic.from_file(filename)) {
   | `Assoc(items) => items
   | _ => failwith("bad json")
   };
-  let raw = Yojson.Basic.pretty_to_string(`Assoc([
-    ("_resolved", `String(Types.resolvedPrefix ++ name ++ "--" ++ Lockfile.viewRealVersion(version))),
-    ...json
-  ]));
-  Files.writeFile(filename, raw) |> expectSuccess("Could not write back package json");
+  let raw = Yojson.Basic.pretty_to_string(`Assoc([("_resolved", `String(resolvedString(name, version))), ...json]));
+  Files.writeFile(filename, raw) |> Files.expectSuccess("Could not write back package json");
 };
 
 let absname = (name, version) => {
   name ++ "__" ++ Lockfile.viewRealVersion(version)
 };
 
+/**
+ * Unpack an archive into place, and then for opam projects create a package.json & apply files / patches.
+ */
 let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) => {
   if (Files.isDirectory(dest)) {
     print_endline("Dependency exists -- assuming it is fine " ++ dest)
@@ -60,20 +34,19 @@ let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) =>
       let withVersion = safe ++ Lockfile.viewRealVersion(version);
       let tarball = cache /+ withVersion ++ ".tarball";
       if (!Files.isFile(tarball)) {
-        ExecCommand.execSync(~cmd="curl -L --output "++ tarball ++ " " ++ url, ()) |> snd |> expectSuccess("failed to fetch with curl");
+        ExecCommand.execSync(~cmd="curl -L --output "++ tarball ++ " " ++ url, ()) |> snd |> Files.expectSuccess("failed to fetch with curl");
       };
-      ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
+      ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> Files.expectSuccess("failed to untar");
     }
     | Types.Source.NoSource => ()
     | Types.Source.GithubSource(user, repo, ref) => {
-      /** TODO */
       let safe = Str.global_replace(Str.regexp("/"), "-", name ++ "__" ++ user ++ "__" ++ repo ++ "__" ++ ref);
       let tarball = cache /+ safe ++ ".tarball";
       if (!Files.isFile(tarball)) {
         let tarUrl = "https://api.github.com/repos/" ++ user ++ "/" ++ repo ++ "/tarball/" ++ ref;
-        ExecCommand.execSync(~cmd="curl -L --output "++ tarball ++ " " ++ tarUrl, ()) |> snd |> expectSuccess("failed to fetch with curl");
+        ExecCommand.execSync(~cmd="curl -L --output "++ tarball ++ " " ++ tarUrl, ()) |> snd |> Files.expectSuccess("failed to fetch with curl");
       };
-      ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
+      ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> Files.expectSuccess("failed to untar");
     }
     | Types.Source.GitSource(gitUrl, commit) => {
       let safe = Str.global_replace(Str.regexp("/"), "-", name);
@@ -83,12 +56,12 @@ let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) =>
         print_endline("[fetching git repo " ++ gitUrl ++ " at commit " ++ commit);
         let gitdest = cache /+ "git-" ++ withVersion;
         /** TODO we want to have the commit nailed down by this point tho */
-        ExecCommand.execSync(~cmd="git clone " ++ gitUrl ++ " " ++ gitdest, ()) |> snd |> expectSuccess("Unable to clone git repo " ++ gitUrl);
-        ExecCommand.execSync(~cmd="cd " ++ gitdest ++ " && git checkout " ++ commit ++ " && rm -rf .git", ()) |> snd |> expectSuccess("Unable to checkout " ++ gitUrl ++ " at " ++ commit);
-        ExecCommand.execSync(~cmd="tar czf " ++ tarball ++ " " ++ gitdest, ()) |> snd |> expectSuccess("Unable to tar up");
-        ExecCommand.execSync(~cmd="mv " ++ gitdest ++ " " ++ dest, ()) |> snd |> expectSuccess("Unable to move");
+        ExecCommand.execSync(~cmd="git clone " ++ gitUrl ++ " " ++ gitdest, ()) |> snd |> Files.expectSuccess("Unable to clone git repo " ++ gitUrl);
+        ExecCommand.execSync(~cmd="cd " ++ gitdest ++ " && git checkout " ++ commit ++ " && rm -rf .git", ()) |> snd |> Files.expectSuccess("Unable to checkout " ++ gitUrl ++ " at " ++ commit);
+        ExecCommand.execSync(~cmd="tar czf " ++ tarball ++ " " ++ gitdest, ()) |> snd |> Files.expectSuccess("Unable to tar up");
+        ExecCommand.execSync(~cmd="mv " ++ gitdest ++ " " ++ dest, ()) |> snd |> Files.expectSuccess("Unable to move");
       } else {
-        ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> expectSuccess("failed to untar");
+        ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> Files.expectSuccess("failed to untar");
       }
     }
     };
@@ -106,27 +79,27 @@ let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) =>
         Unix.unlink(dest /+ "esy.json");
       };
       let raw = Yojson.Basic.pretty_to_string(Yojson.Safe.to_basic(packageJson));
-      Files.writeFile(dest /+ "package.json", raw) |> expectSuccess("could not write package.json");
+      Files.writeFile(dest /+ "package.json", raw) |> Files.expectSuccess("could not write package.json");
       files |> List.iter(((relpath, contents)) => {
         Files.mkdirp(Filename.dirname(dest /+ relpath));
-        Files.writeFile(dest /+ relpath, contents) |> expectSuccess("could not write file " ++ relpath)
+        Files.writeFile(dest /+ relpath, contents) |> Files.expectSuccess("could not write file " ++ relpath)
       });
 
       patches |> List.iter((abspath) => {
         ExecCommand.execSync(
           ~cmd=Printf.sprintf("sh -c 'cd %s && patch -p1 < %s'", dest, abspath),
           ()
-        ) |> snd |> expectSuccess("Failed to patch")
+        ) |> snd |> Files.expectSuccess("Failed to patch")
       });
     }
     }
   }
 };
 
+/* Get a package and its children & build deps */
 let rec fetchDep = (modcache, cache, {Lockfile.name, version} as dep, childDeps) => {
   let base = modcache /+ absname(name, version);
   if (Files.exists(base)) {
-    /* print_endline("Found " ++ base ++ " assuming its fine"); */
     ()
   } else {
     unpackArchive(base, cache, dep);
@@ -138,7 +111,7 @@ let rec fetchDep = (modcache, cache, {Lockfile.name, version} as dep, childDeps)
       } else {
         fetchDep(modcache, cache, childDep, []);
         Files.mkdirp(Filename.dirname(dest));
-        symlink(modcache /+ absname(childDep.name, childDep.version), dest)
+        Files.symlink(modcache /+ absname(childDep.name, childDep.version), dest)
       }
     });
 
@@ -149,11 +122,12 @@ let rec fetchDep = (modcache, cache, {Lockfile.name, version} as dep, childDeps)
         failwith("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
       };
       Files.mkdirp(Filename.dirname(dest));
-      symlink(modcache /+ absname(name, realVersion), dest)
+      Files.symlink(modcache /+ absname(name, realVersion), dest)
     })
   }
 };
 
+/* Do the whole fetching! */
 let fetch = (basedir, lockfile) => {
   let cache = basedir /+ ".esy-cache" /+ "archives";
   Files.mkdirp(cache);
@@ -168,7 +142,7 @@ let fetch = (basedir, lockfile) => {
 
     let dest = basedir /+ "node_modules" /+ dep.name;
     Files.mkdirp(Filename.dirname(dest));
-    symlink(modcache /+ absname(dep.name, dep.version), dest);
+    Files.symlink(modcache /+ absname(dep.name, dep.version), dest);
   });
 
   lockfile.solvedBuildDeps |> List.iter(((name, realVersion)) => {
@@ -179,7 +153,7 @@ let fetch = (basedir, lockfile) => {
       print_endline("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
     } else {
       Files.mkdirp(Filename.dirname(dest));
-      symlink(modcache /+ absname(name, realVersion), dest)
+      Files.symlink(modcache /+ absname(name, realVersion), dest)
     }
   });
 
