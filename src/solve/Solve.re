@@ -20,22 +20,10 @@ type cache = {
   manifests: Hashtbl.t((string, Lockfile.realVersion), (manifest, list(Types.dep), list(Types.dep))),
 };
 
-type cudfVersions = {
-  lookupRealVersion: Hashtbl.t((string, int), Lockfile.realVersion),
-  lookupIntVersion: Hashtbl.t((string, Lockfile.realVersion), int),
-};
-
-let module CudfVersions = {
-  let init = () => {
-    lookupRealVersion: Hashtbl.create(100),
-    lookupIntVersion: Hashtbl.create(100),
-  }
-};
-
 type state = {
   cache,
   universe: Cudf.universe,
-  cudfVersions: cudfVersions,
+  cudfVersions: CudfVersions.t,
 };
 
 /**
@@ -56,31 +44,18 @@ type state = {
  *
  */
 
-let getRealVersion = (cudfVersions, package) => {
-  switch (Hashtbl.find(cudfVersions.lookupRealVersion, (package.Cudf.package, package.Cudf.version))) {
-  | exception Not_found => {
-    failwith("Tried to find a package that wasn't listed in the versioncache " ++ package.Cudf.package ++ " " ++ string_of_int(package.Cudf.version))
-  }
-  | version => version
-  };
-};
-
-let matchesSource = (source, cudfVersions, package) => {
-  satisfies(getRealVersion(cudfVersions, package), source)
-};
-
 
 let cudfDep = (owner, state, (name, source)) => {
   let available = Cudf.lookup_packages(state.universe, name);
   let matching = available
-  |> List.filter(matchesSource(source, state.cudfVersions));
+  |> List.filter(CudfVersions.matchesSource(source, state.cudfVersions));
   let final = (if (matching == []) {
     let hack = switch source {
     | Opam(opamVersionRange) => {
       /* print_endline("Trying to convert from pseudo-npm"); */
       let nonNpm = tryConvertingOpamFromNpm(opamVersionRange);
       /* print_endline(Shared.GenericVersion.view(Shared.Types.viewOpamConcrete, nonNpm)); */
-      available |> List.filter(matchesSource(Opam(nonNpm), state.cudfVersions))
+      available |> List.filter(CudfVersions.matchesSource(Opam(nonNpm), state.cudfVersions))
     }
     | _ => []
     };
@@ -91,7 +66,7 @@ let cudfDep = (owner, state, (name, source)) => {
         []
       } else {
         print_endline("🛑 🛑 🛑  Requirement unsatisfiable " ++ owner ++ " wants " ++ name ++ " at version " ++ Types.viewReq(source));
-        available |> List.iter(package => print_endline("  - " ++ Lockfile.viewRealVersion(getRealVersion(state.cudfVersions, package))));
+        available |> List.iter(package => print_endline("  - " ++ Lockfile.viewRealVersion(CudfVersions.getRealVersion(state.cudfVersions, package))));
         []
       }
     }
@@ -106,8 +81,7 @@ let cudfDep = (owner, state, (name, source)) => {
 };
 
 let rec addPackage = (name, realVersion, version, deps, buildDeps, state, manifest) => {
-  Hashtbl.replace(state.cudfVersions.lookupIntVersion, (name, realVersion), version);
-  Hashtbl.replace(state.cudfVersions.lookupRealVersion, (name, version), realVersion);
+  CudfVersions.update(state.cudfVersions, name, realVersion, version);
   Hashtbl.replace(state.cache.manifests, (name, realVersion), (manifest, deps, buildDeps));
   List.iter(addToUniverse(state), deps);
   let package = {
@@ -169,7 +143,7 @@ let rec solveDeps = (cache, deps) => {
       packages
       |> List.filter(p => p.Cudf.package != rootName)
       |> List.fold_left(((deps, buildDeps), p) => {
-        let version = getRealVersion(state.cudfVersions, p);
+        let version = CudfVersions.getRealVersion(state.cudfVersions, p);
 
         let (manifest, _myDeps, myBuildDeps) = Hashtbl.find(state.cache.manifests, (p.Cudf.package, version));
         let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest);
