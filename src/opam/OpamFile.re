@@ -138,30 +138,40 @@ let replaceVariables = (info, string) => {
   )
 };
 
+[@test [
+  ({|"install" {!preinstalled}|}, Some("install"))
+]]
+[@test.call (string) => processCommandItem(("something", Alpha("a", None)), OpamParser.value_from_string(string, "wat"))]
+let processCommandItem = (info, item) => {
+  switch item {
+  | String(_, name) => Some(replaceVariables(info, name))
+  | Ident(_, ident) => {
+    switch (List.assoc_opt(ident, variables(info))) {
+    | Some(string) => Some(string)
+    | None => {
+      print_endline("⚠️ Missing vbl " ++ ident);
+      None
+    }
+    }
+  };
+  | Option(_, _, [Ident(_, "preinstalled")]) => {
+    /** Skipping preinstalled */
+    None
+  }
+  | Option(_, String(_, name), [Pfxop(_, `Not, Ident(_, "preinstalled"))]) => {
+    /** Not skipping not preinstalled */
+    Some(replaceVariables(info, name))
+  }
+  | _ => {
+    /** TODO handle  "--%{text:enable}%-text" {"%{react:installed}%"} correctly */
+    print_endline("Bad build arg " ++ OpamPrinter.value(item));
+    None
+  }
+  };
+};
+
 let processCommand = (info, items) => {
-  items |> filterMap(item => {
-    switch item {
-    | String(_, name) => Some(replaceVariables(info, name))
-    | Ident(_, ident) => {
-      switch (List.assoc_opt(ident, variables(info))) {
-      | Some(string) => Some(string)
-      | None => {
-        print_endline("⚠️ Missing vbl " ++ ident);
-        None
-      }
-      }
-    };
-    | Option(_, _, [Ident(_, "preinstalled")]) => {
-      /** Skipping preinstalled */
-      None
-    }
-    | _ => {
-      /** TODO handle  "--%{text:enable}%-text" {"%{react:installed}%"} correctly */
-      print_endline("Bad build arg " ++ OpamPrinter.value(item));
-      None
-    }
-    };
-  })
+  items |> filterMap(processCommandItem(info))
 };
 
 /** TODO handle optional build things */
@@ -209,6 +219,12 @@ let processCommandList = (info, item) => {
 };
 
 /** TODO handle "patch-ocsigen-lwt-101.diff" {os = "darwin"} correctly */
+[@test [
+  ({|["patch-ocsigen-lwt-101.diff" {os = "darwin"}]|}, ["patch-ocsigen-lwt-101.diff"]),
+  ({|["openbsd.diff" {os = "openbsd"}]|}, []),
+]]
+[@test.call (string) => processStringList(Some(OpamParser.value_from_string(string, "wat")))]
+[@test.print (fmt, x) => Format.fprintf(fmt, "%s", String.concat(", ", x))]
 let processStringList = item => {
   let items = switch(item) {
   | None => []
@@ -219,6 +235,10 @@ let processStringList = item => {
   items |> filterMap(item => {
     switch item {
       | String(_, name) => Some(name)
+      | Option(_, String(_, name), [Relop(_, `Eq, Ident(_, "os"), String(_, "darwin"))]) => Some(name)
+      | Option(_, String(_, name), [Relop(_, `Eq, Ident(_, "os"), String(_, _))]) => None
+      | Option(_, String(_, name), [Ident(_, "preinstalled")]) => None
+      | Option(_, String(_, name), [Pfxop(_, `Not, Ident(_, "preinstalled"))]) => Some(name)
       | _ => {
         print_endline("Bad string list item arg " ++ OpamPrinter.value(item));
         None

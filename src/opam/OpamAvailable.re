@@ -73,18 +73,20 @@ let rec getAvailability = opamvalue => {
   /* We don't support pre-4.02.3 anyway */
   | Relop(_, `Neq, Ident(_, "compiler"), String(_, "4.02.1+BER")) => true
   | Relop(_, `Eq, Ident(_, "compiler"), String(_, compiler)) => {
-    print_endline("Wants a compiler " ++ compiler ++ "... assuming we don't have it");
+    /* print_endline("Wants a compiler " ++ compiler ++ "... assuming we don't have it"); */
     false
   }
   | Relop(_, _rel, Ident(_, "opam-version"), _) => true
   | Relop(_, `Eq, Ident(_, "os"), String(_, "darwin")) => true
   | Relop(_, `Neq, Ident(_, "os"), String(_, "darwin")) => false
   | Relop(_, rel, Ident(_, "os"), String(_, os)) => {
-    print_endline("Wants an OS " ++ os ++ "... assuming we don't have it");
+    /* print_endline("Wants an OS " ++ os ++ "... assuming we don't have it"); */
     false
   }
   | Pfxop(_, `Not, Ident(_, "preinstalled")) => true
   | Ident(_, "preinstalled") => false
+  | Bool(_, false) => false
+  | Bool(_, true) => true
   | Ident(_, "false") => false
   | Ident(_, "true") => true
   | Option(_, contents, options) => {
