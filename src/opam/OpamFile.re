@@ -448,33 +448,3 @@ let toPackageJson = (opamOverrides, filename, name, version) => {
     ))
   ]), manifest.files, manifest.patches)
 };
-
-/* let process = (parsed: OpamParserTypes.opamfile) => switch parsed {
-  | { file_contents, file_name } => switch file_contents {
-  | [] => failwith((""))
-  | [item, ..._] => switch item {
-  | OpamParserTypes.Section(_, _) => failwith((""))
-  | OpamParserTypes.Variable(a, b, c) => switch c {
-  | OpamParserTypes.Bool(_, _) => failwith ("")
-  | OpamParserTypes.Int(_, _) => failwith ("")
-  | OpamParserTypes.String(_, _) => failwith ("")
-  | OpamParserTypes.Relop(_, _, _, _) => failwith ("")
-  | OpamParserTypes.Prefix_relop(_, r, _) => switch r {
-  | `Leq => failwith ("")
-  | `Lt => failwith ("")
-  | `Neq => failwith ("")
-  | `Eq => failwith ("")
-  | `Geq => failwith ("")
-  | `Gt => failwith ("")
-  }
-  | OpamParserTypes.Logop(_, l, _, _) => failwith("")
-  | OpamParserTypes.Pfxop(_, p, _) => failwith ("")
-  | OpamParserTypes.Ident(_, _) => failwith ("")
-  | OpamParserTypes.List(_, _) => failwith ("")
-  | OpamParserTypes.Group(_, _) => failwith ("")
-  | OpamParserTypes.Option(_, _, _) => failwith ("")
-  | OpamParserTypes.Env_binding(_, _, _, _) => failwith ("")
-  }
-  }
-  }
-  }; */

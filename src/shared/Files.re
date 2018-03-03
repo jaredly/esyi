@@ -1,4 +1,6 @@
 
+/* TODO use lwt-node */
+
 let maybeStat = (path) =>
   try (Some(Unix.stat(path))) {
   | Unix.Unix_error(Unix.ENOENT, _, _) => None

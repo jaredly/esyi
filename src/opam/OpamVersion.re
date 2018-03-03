@@ -1,14 +1,4 @@
 
-/* [@deriving yojson]
-type alpha = Alpha(string, option(num))
-and num = Num(int, option(alpha));
-
-[@deriving yojson]
-type concrete = alpha;
-
-[@deriving yojson]
-type range = Shared.GenericVersion.range(concrete); */
-
 open Shared.Types;
 
 let parseConcrete = Npm.OpamConcrete.parseConcrete;

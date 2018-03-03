@@ -1,6 +1,13 @@
 open Shared.Types;
 open Shared;
 
+/**
+ * This file is about parsing opam versions from `package.json` specifications.
+ * So the concrete versions are opam (following the "interspersed alpha and numeric"
+ * pattern), but the range syntax is what you get in npm.
+ * So ^1.0+beta5 becomes >= 1.0-beta5 && < 2
+ */
+
 let triple = (major, minor, patch) => {
   Shared.Types.opamFromNpmConcrete((major, minor, patch, None))
 };
@@ -121,7 +128,6 @@ let rec findNextForCaret = (Alpha(t, n)) => {
   }
 };
 
-/** TODO handle ranges in here */
 let parseOpamSimple = text => {
   if (text == "*") {
     GenericVersion.Any

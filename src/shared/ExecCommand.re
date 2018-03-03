@@ -1,4 +1,6 @@
 
+/** TODO use lwt or something */
+
 /**
  * Get the output of a command, in lines.
  */

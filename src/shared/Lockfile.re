@@ -1,62 +1,4 @@
 
-/**
- * Once I've solved all the other things, figure out what build deps I have, and try to cull them down
- * to deduplicate things that fit within the same semver range.
- * Then get them, and resolve deps as though they were top-level, but *sharing the same build_modules cache*.
- * This way build_modules live in a single place.
- *
- *
- * build_modules/ <-- applies to whole tree!
- *    some-tool.1.1.0/
- *      src/
- *      esy_modules/
- *    other-tool.3.4.0/
- * esy_modules/
- *    something
- *      src/
- *    otherdep
- *      src/
- *    third
- *      src/
- * dev_modules/
- *    something
- *      src/
- *    otherdep
- *      src/
- *
- *
- * // for ditry checking
- * requestedDeps: {[key: string]: string},
- * requestedBuildDeps: {[key: string]: string},
- *
- * solvedDeps: {
- *   "name": {
- *     version: "concrete-version",
- *     location: "/path"
- *     source: "url"
- *     hash: "somehash"
- *     solvedBuildDeps: {
- *       "name": "concrete-version"
- *     }
- *   }
- * }
- * solvedBuildDeps: {
- *  "name": "concrete-version"
- * }
- * allBuildDeps: {
- *  "name": {
- *    "concrete-version": {
- *      solvedDeps: {
- *      }
- *      solvedBuildDeps: {
- *        "name": "concrete-version"
- *      }
- *    }
- *  }
- * }
- *
- */
-
 [@deriving yojson]
 type realVersion = [
   | `Github(string, string, option(string))
@@ -64,6 +6,20 @@ type realVersion = [
   | `Opam(Types.opamConcrete)
   | `Git(string)
 ];
+
+let viewRealVersion: realVersion => string = v => switch v {
+| `Github(user, repo, ref) => "github-" ++ user ++ "__" ++ repo ++ (switch ref { | Some(x) => "__" ++ x | None => ""})
+| `Git(s) => "git-" ++ s
+| `Npm(t) => "npm-" ++ Types.viewNpmConcrete(t)
+| `Opam(t) => "opam-" ++ Types.viewOpamConcrete(t)
+};
+
+let plainVersionNumber = v => switch v {
+| `Github(user, repo, ref) => user ++ "__" ++ repo ++ (switch ref { | Some(x) => "__" ++ x | None => ""})
+| `Git(s) => s
+| `Npm(t) => Types.viewNpmConcrete(t)
+| `Opam(t) => Types.viewOpamConcrete(t)
+};
 
 type json = Yojson.Safe.json;
 let json_to_yojson = x => x;
@@ -81,14 +37,6 @@ type solvedDep = {
   requestedBuildDeps: list(Types.dep)
 }
 
-/* [@deriving yojson]
-and buildDep = {
-  bname: string,
-  version: realVersion,
-  solvedDeps: list(solvedDep),
-  buildDeps: list((string, realVersion))
-} */
-
 [@deriving yojson]
 and lockfile = {
   requestedDeps: list(Types.dep),
@@ -102,21 +50,6 @@ and lockfile = {
   /* A mapping of name:version to the solved dependencies, and the solved build deps */
   allBuildDeps: list((string, list((solvedDep, list(solvedDep))))),
 };
-
-let viewRealVersion: realVersion => string = v => switch v {
-| `Github(user, repo, ref) => "github-" ++ user ++ "__" ++ repo ++ (switch ref { | Some(x) => "__" ++ x | None => ""})
-| `Git(s) => "git-" ++ s
-| `Npm(t) => "npm-" ++ Types.viewNpmConcrete(t)
-| `Opam(t) => "opam-" ++ Types.viewOpamConcrete(t)
-};
-
-let plainVersionNumber = v => switch v {
-| `Github(user, repo, ref) => user ++ "__" ++ repo ++ (switch ref { | Some(x) => "__" ++ x | None => ""})
-| `Git(s) => s
-| `Npm(t) => Types.viewNpmConcrete(t)
-| `Opam(t) => Types.viewOpamConcrete(t)
-};
-
 
 let empty = {
   requestedDeps: [],

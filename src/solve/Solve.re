@@ -485,7 +485,6 @@ let solve = (config, manifest) => {
         ({
           Lockfile.name: key,
           source: lockDownSource(Manifest.getArchive(manifest)),
-          /* opamFile: getOpamFile(manifest), */
           opamFile: getOpamFile(manifest, cache.opamOverrides, key, realVersion),
           version: realVersion,
           unpackedLocation: "",
@@ -499,7 +498,6 @@ let solve = (config, manifest) => {
     []
   );
 
-    /* ...Lockfile.empty, */
   {
     Lockfile.requestedDeps: deps,
     requestedBuildDeps: buildDeps,

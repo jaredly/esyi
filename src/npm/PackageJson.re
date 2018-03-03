@@ -2,6 +2,10 @@ open Cudf;
 open Shared;
 open Types;
 
+/*
+ * Get dependencies data out of a package.json
+ */
+
 let getOpam = name => {
   let ln = 6;
   if (String.length(name) > ln && String.sub(name, 0, ln) == "@opam/") {

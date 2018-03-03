@@ -1,4 +1,9 @@
 
+/**
+ * Do the nitty gritty parsing of npm semver.
+ * Follows this spec: https://docs.npmjs.com/misc/semver
+ */
+
 type partial = [
   | `Major(int)
   | `Minor(int, int)

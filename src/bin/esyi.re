@@ -31,7 +31,6 @@ let fetch = (basedir) => {
   Fetch.fetch(basedir, lockfile);
 };
 
-Shared.Wget.init();
 switch (Sys.argv) {
   | [|_, "solve", basedir|] => solve(basedir)
   | [|_, "fetch", basedir|] => fetch(basedir)
@@ -41,4 +40,3 @@ switch (Sys.argv) {
   }
   | _ => print_endline("Usage: esyi basedir")
 };
-Shared.Wget.cleanup();

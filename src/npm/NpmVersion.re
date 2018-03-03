@@ -1,36 +1,7 @@
 
-open NpmTypes;
-
-/* let rawToConcrete = (raw: raw): Shared.Types.npmConcrete => {
-  switch raw {
-  | `Exactly(c) => c
-  | `UpToMinor(c) => c
-  | `UpToMajor(c) => c
-  | _ => failwith("Invalid range")
-  }
-};
-
-let rec rawToRange = (raw: raw): Shared.Types.npmRange => {
-  open Shared.GenericVersion;
-  switch raw {
-  | `Or(a, b) => Or(rawToRange(a), rawToRange(b))
-  | `And(a, b) => And(rawToRange(a), rawToRange(b))
-  /* The real rules allow `AtMost` when all 3 parts are filled out */
-  | `Between(a, b) => And(AtLeast(rawToConcrete(a)), LessThan(rawToConcrete(b)))
-  | `LessThan(c) => LessThan(rawToConcrete(c))
-  | `GreaterThan(c) => LessThan(rawToConcrete(c))
-  | `AtMost(c) => AtMost(rawToConcrete(c))
-  | `AtLeast(c) => AtLeast(rawToConcrete(c))
-  | `Exactly(c) => Exactly(c)
-  /* TODO the rules here are more complicated. see https://docs.npmjs.com/misc/semver */
-  /* It shouldn't be *more* permissive than the actual rules, though. */
-  | `UpToMinor((m, i, p, r)) => And(AtLeast((m, i, p, r)), LessThan((m, i + 1, 0, None)))
-  | `UpToMajor((0, 0, p, r)) => Exactly((0, 0, p, r))
-  | `UpToMajor((0, i, p, r)) => And(AtLeast((0, i, p, r)), LessThan((0, i + 1, 0, None)))
-  | `UpToMajor((m, i, p, r)) => And(AtLeast((m, i, p, r)), LessThan((m + 1, 0, 0, None)))
-  | `Any => Any
-  }
-}; */
+/*
+ * High level handling of npm versions
+ */
 
 let viewConcrete = ((m, i, p, r)) => {
   ([m, i, p] |> List.map(string_of_int) |> String.concat("."))

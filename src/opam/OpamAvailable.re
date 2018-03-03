@@ -81,16 +81,11 @@ let rec getAvailability = opamvalue => {
   | Relop(_, _rel, Ident(_, "opam-version"), _) => true
   | Relop(_, `Eq, Ident(_, "os"), String(_, "darwin")) => true
   | Relop(_, `Neq, Ident(_, "os"), String(_, "darwin")) => false
-  | Relop(_, rel, Ident(_, "os"), String(_, os)) => {
-    /* print_endline("Wants an OS " ++ os ++ "... assuming we don't have it"); */
-    false
-  }
+  | Relop(_, rel, Ident(_, "os"), String(_, os)) => false
   | Pfxop(_, `Not, Ident(_, "preinstalled")) => true
   | Ident(_, "preinstalled") => false
   | Bool(_, false) => false
   | Bool(_, true) => true
-  | Ident(_, "false") => false
-  | Ident(_, "true") => true
   | Option(_, contents, options) => {
     print_endline("[[ AVAILABILITY ]] Ignoring option: " ++ (options |> List.map(OpamPrinter.value) |> String.concat(" .. ")));
     getAvailability(contents)
@@ -112,7 +107,7 @@ let rec getAvailability = opamvalue => {
     loop(items)
   }
   | y => {
-    print_endline("Unexpected availability option -- pretending its fint " ++ OpamPrinter.value(opamvalue));
+    print_endline("Unexpected availability option -- pretending its fine " ++ OpamPrinter.value(opamvalue));
     true
   }
   }
