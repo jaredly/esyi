@@ -33,6 +33,8 @@ let rec getOCamlVersion = opamvalue => {
   | Relop(_, rel, Ident(_, "os"), String(_, version)) => Any
   | Pfxop(_, `Not, Ident(_, "preinstalled")) => Any
   | Ident(_, "preinstalled" | "false") => Any
+  | Bool(_, true) => Any
+  | Bool(_, false) => Nothing
   | Option(_, contents, options) => {
     print_endline("Ignoring option: " ++ (options |> List.map(OpamPrinter.value) |> String.concat(" .. ")));
     getOCamlVersion(contents)

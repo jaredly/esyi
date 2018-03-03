@@ -8,6 +8,7 @@ type range('inner) =
   | AtLeast('inner)
   | LessThan('inner)
   | AtMost('inner)
+  | Nothing
   | Any;
   /* | UntilNextMajor('concrete) | UntilNextMinor('concrete); */
 
@@ -17,6 +18,7 @@ let rec matches = (compareInner, range, concrete) => {
   switch range {
   | Exactly(a) => compareInner(a, concrete) == 0
   | Any => true
+  | Nothing => false
   | GreaterThan(a) => compareInner(a, concrete) < 0
   | AtLeast(a) => compareInner(a, concrete) <= 0
   | LessThan(a) => compareInner(a, concrete) > 0
@@ -30,6 +32,7 @@ let rec isTooLarge = (compareInner, range, concrete) => {
   switch range {
   | Exactly(a) => compareInner(a, concrete) < 0
   | Any => false
+  | Nothing => false
   | GreaterThan(a) => false
   | AtLeast(a) => false
   | LessThan(a) => compareInner(a, concrete) <= 0
@@ -43,6 +46,7 @@ let rec view = (viewInner, range) => {
   switch range {
   | Exactly(a) => viewInner(a)
   | Any => "*"
+  | Nothing => "none"
   | GreaterThan(a) => "> " ++ viewInner(a)
   | AtLeast(a) => ">= " ++ viewInner(a)
   | LessThan(a) => "< " ++ viewInner(a)
@@ -56,6 +60,7 @@ let rec map = (transform, range) => {
   switch range {
   | Exactly(a) => Exactly(transform(a))
   | Any => Any
+  | Nothing => Nothing
   | GreaterThan(a) => GreaterThan(transform(a))
   | AtLeast(a) => AtLeast(transform(a))
   | LessThan(a) => LessThan(transform(a))

@@ -139,7 +139,7 @@ let replaceVariables = (info, string) => {
 };
 
 [@test [
-  ({|"install" {!preinstalled}|}, Some("install"))
+  ({|"install" {!preinstalled}|}, Some("install")),
 ]]
 [@test.call (string) => processCommandItem(("something", Alpha("a", None)), OpamParser.value_from_string(string, "wat"))]
 let processCommandItem = (info, item) => {
@@ -156,6 +156,10 @@ let processCommandItem = (info, item) => {
   };
   | Option(_, _, [Ident(_, "preinstalled")]) => {
     /** Skipping preinstalled */
+    None
+  }
+  | Option(_, _, [String(_, something)]) => {
+    /* String options like "%{react:installed}%" are not currently supported */
     None
   }
   | Option(_, String(_, name), [Pfxop(_, `Not, Ident(_, "preinstalled"))]) => {

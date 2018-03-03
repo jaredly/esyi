@@ -334,7 +334,7 @@ let rec solveDeps = (cache, deps) => {
     /* let opamOverrides = Opam.OpamOverrides.getOverrides(config.Types.esyOpamOverrides); */
     /* print_endline("Running the SMT solver"); */
     /** Here we invoke the solver! Might also take a while, but probably won't */
-    switch (Mccs.resolve_cudf(~verbose=true, ~timeout=5., "-notuptodate", (preamble, state.universe, request))) {
+    switch (Mccs.resolve_cudf(~verbose=false, ~timeout=5., "-notuptodate", (preamble, state.universe, request))) {
     | None => failwith("Unable to resolve")
     | Some((a, universe)) => {
       let packages = Cudf.get_packages(~filter=(p => p.Cudf.installed), universe);
