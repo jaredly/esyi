@@ -14,7 +14,6 @@ module T = {
     opamOverrides: list((string, Types.opamRange, string)),
     npmPackages: Hashtbl.t(string, Yojson.Basic.json),
     opamPackages: Hashtbl.t(string, OpamFile.manifest),
-    allBuildDeps: Hashtbl.t(string, list((Lockfile.realVersion, list(Lockfile.solvedDep), list(Types.dep)))),
     versions: VersionCache.t,
     manifests: Hashtbl.t((string, Lockfile.realVersion), (manifest, list(Types.dep), list(Types.dep))),
   };
@@ -26,6 +25,19 @@ module T = {
   };
 };
 open T;
+
+let initCache = config => {
+  versions: {
+    availableNpmVersions: Hashtbl.create(100),
+    availableOpamVersions: Hashtbl.create(100),
+    config,
+  },
+  opamOverrides: OpamOverrides.getOverrides(config.Types.esyOpamOverrides),
+  npmPackages: Hashtbl.create(100),
+  opamPackages: Hashtbl.create(100),
+  manifests: Hashtbl.create(100),
+};
+
 
 /**
  *
@@ -111,7 +123,7 @@ and addToUniverse = (state, universe, (name, source)) => {
 
 let rootName = "*root*";
 
-let rec solveDeps = (cache, deps) => {
+let solveDeps = (cache, deps) => {
   if (deps == []) {
     ([], [])
   } else {
@@ -139,8 +151,8 @@ let rec solveDeps = (cache, deps) => {
       |> List.fold_left(((deps, buildDeps), p) => {
         let version = CudfVersions.getRealVersion(state.cudfVersions, p);
 
-        let (manifest, _myDeps, myBuildDeps) = Hashtbl.find(state.cache.manifests, (p.Cudf.package, version));
-        let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest);
+        let (manifest, requestedDeps, requestedBuildDeps) = Hashtbl.find(state.cache.manifests, (p.Cudf.package, version));
+        /* let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest); */
         ([{
           Lockfile.name: p.Cudf.package,
           version: version,
@@ -152,7 +164,7 @@ let rec solveDeps = (cache, deps) => {
           opamFile: getOpamFile(manifest, cache.opamOverrides, p.Cudf.package, version),
           unpackedLocation: "",
           buildDeps: [],
-        }, ...deps], myBuildDeps @ buildDeps)
+        }, ...deps], requestedBuildDeps @ buildDeps)
       }, ([], []))
     }
     }
