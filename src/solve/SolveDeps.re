@@ -125,7 +125,7 @@ let rootName = "*root*";
 
 let solveDeps = (cache, deps) => {
   if (deps == []) {
-    ([], [])
+    []
   } else {
 
     let universe = Cudf.empty_universe();
@@ -135,11 +135,8 @@ let solveDeps = (cache, deps) => {
     };
 
     /** This is where most of the work happens, file io, network requests, etc. */
-    /* print_endline("adding everyrthing to the universe"); */
     List.iter(addToUniverse(state, universe), deps);
 
-    /* let opamOverrides = Opam.OpamOverrides.getOverrides(config.Types.esyOpamOverrides); */
-    /* print_endline("Running the SMT solver"); */
     /** Here we invoke the solver! Might also take a while, but probably won't */
     let cudfDeps = List.map(cudfDep(rootName, universe, state.cudfVersions), deps);
     switch (runSolver(rootName, cudfDeps, universe)) {
@@ -148,24 +145,12 @@ let solveDeps = (cache, deps) => {
       /* print_endline("Installed packages:"); */
       packages
       |> List.filter(p => p.Cudf.package != rootName)
-      |> List.fold_left(((deps, buildDeps), p) => {
+      |> List.map(p => {
         let version = CudfVersions.getRealVersion(state.cudfVersions, p);
 
         let (manifest, requestedDeps, requestedBuildDeps) = Hashtbl.find(state.cache.manifests, (p.Cudf.package, version));
-        /* let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest); */
-        ([{
-          Lockfile.name: p.Cudf.package,
-          version: version,
-          requestedDeps,
-          requestedBuildDeps,
-          source: lockDownSource(switch version {
-          | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
-          | _ => Manifest.getArchive(manifest)}) ,
-          opamFile: getOpamFile(manifest, cache.opamOverrides, p.Cudf.package, version),
-          unpackedLocation: "",
-          buildDeps: [],
-        }, ...deps], requestedBuildDeps @ buildDeps)
-      }, ([], []))
+        (p.Cudf.package, version, manifest, requestedDeps, requestedBuildDeps)
+      })
     }
     }
   };

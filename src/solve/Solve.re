@@ -5,7 +5,7 @@ open Shared;
 open SolveUtils;
 open SolveDeps.T;
 
-/**
+/*
  * This file solves deps + buildDeps
  *
  * but doesn't do buildDeps very well, actually
@@ -13,6 +13,26 @@ open SolveDeps.T;
  * might as well just not do them for the moment.
  * Count everything as a normal dep.
  */
+
+let solveDepsWithBuildDeps = (cache, deps) => {
+  SolveDeps.solveDeps(cache, deps)
+      |> List.fold_left(((deps, buildDeps), (name, version, manifest, requestedDeps, requestedBuildDeps)) => {
+
+      ([{
+          Lockfile.name: name,
+          version: version,
+          requestedDeps,
+          requestedBuildDeps,
+          source: lockDownSource(switch version {
+          | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
+          | _ => Manifest.getArchive(manifest)}) ,
+          opamFile: getOpamFile(manifest, cache.opamOverrides, name, version),
+          unpackedLocation: "",
+          buildDeps: [],
+        }
+        , ...deps], requestedBuildDeps @ buildDeps)
+      }, ([], []))
+};
 
 let rec processBuildDeps = (allBuildDepsCache, cache, deps) => {
   let unmetDeps = deps |> List.filter(((name, req)) => {
@@ -33,7 +53,7 @@ let rec processBuildDeps = (allBuildDepsCache, cache, deps) => {
 
   let allBuildDeps = toInstall |> List.map(((name, versionPlus)) => {
     let (manifest, deps, buildDeps) = getCachedManifest(cache.opamOverrides, cache.manifests, (name, versionPlus));
-    let (solvedDeps, collectedBuildDeps) = SolveDeps.solveDeps(cache, deps);
+    let (solvedDeps, collectedBuildDeps) = solveDepsWithBuildDeps(cache, deps);
 
     let current = switch (Hashtbl.find(allBuildDepsCache, name)) {
     | exception Not_found => []
@@ -91,7 +111,7 @@ let solve = (config, manifest) => {
   };
   let buildDeps = buildDeps @ devDeps;
 
-  let (solvedDeps, collectedBuildDeps) = SolveDeps.solveDeps(cache, deps);
+  let (solvedDeps, collectedBuildDeps) = solveDepsWithBuildDeps(cache, deps);
   let allBuildDepsCache = Hashtbl.create(100);
 
   print_endline("Now dev deps");
