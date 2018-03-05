@@ -33,16 +33,13 @@ type solvedDep = {
   opamFile: option((json, list((string, string)), list(string))),
   unpackedLocation: string,
   buildDeps: list((string, realVersion)),
-  requestedDeps: list(Types.dep),
-  requestedBuildDeps: list(Types.dep)
+  requestedDeps: Types.depsByKind
 }
 
 [@deriving yojson]
 and lockfile = {
-  requestedDeps: list(Types.dep),
-  requestedBuildDeps: list(Types.dep),
+  requestedDeps: Types.depsByKind,
   /* TODO dev deps, they need to be split into devBuildDeps probably */
-  /* specifiedDevDeps: list(Types.dep), */
   /* solvedDevDeps: list(solvedDep), */
 
   solvedDeps: list(solvedDep),
@@ -52,9 +49,12 @@ and lockfile = {
 };
 
 let empty = {
-  requestedDeps: [],
-  /* specifiedDevDeps: [], */
-  requestedBuildDeps: [],
+  requestedDeps: {
+    runtime: [],
+    build: [],
+    npm: [],
+    dev: [],
+  },
 
   solvedDeps: [],
   solvedBuildDeps: [],

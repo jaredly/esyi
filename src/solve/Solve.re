@@ -5,6 +5,22 @@ open Shared;
 open SolveUtils;
 open SolveDeps.T;
 
+
+
+
+
+
+let solve = (config, manifest) => {
+
+};
+
+
+
+
+
+
+
+
 /*
  * This file solves deps + buildDeps
  *
@@ -16,13 +32,12 @@ open SolveDeps.T;
 
 let solveDepsWithBuildDeps = (cache, deps) => {
   SolveDeps.solveDeps(cache, deps)
-      |> List.fold_left(((deps, buildDeps), (name, version, manifest, requestedDeps, requestedBuildDeps)) => {
+      |> List.fold_left(((deps, buildDeps), (name, version, manifest, requestedDeps)) => {
 
       ([{
           Lockfile.name: name,
           version: version,
           requestedDeps,
-          requestedBuildDeps,
           source: lockDownSource(switch version {
           | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
           | _ => Manifest.getArchive(manifest)}) ,
@@ -30,7 +45,7 @@ let solveDepsWithBuildDeps = (cache, deps) => {
           unpackedLocation: "",
           buildDeps: [],
         }
-        , ...deps], requestedBuildDeps @ buildDeps)
+        , ...deps], requestedDeps.build @ buildDeps)
       }, ([], []))
 };
 
@@ -52,7 +67,7 @@ let rec processBuildDeps = (allBuildDepsCache, cache, deps) => {
   }) |> List.sort_uniq(compare);
 
   let allBuildDeps = toInstall |> List.map(((name, versionPlus)) => {
-    let (manifest, deps, buildDeps) = getCachedManifest(cache.opamOverrides, cache.manifests, (name, versionPlus));
+    let (manifest, depsByKind) = getCachedManifest(cache.opamOverrides, cache.manifests, (name, versionPlus));
     let (solvedDeps, collectedBuildDeps) = solveDepsWithBuildDeps(cache, deps);
 
     let current = switch (Hashtbl.find(allBuildDepsCache, name)) {
@@ -60,11 +75,11 @@ let rec processBuildDeps = (allBuildDepsCache, cache, deps) => {
     | items => items
     };
     Hashtbl.replace(allBuildDepsCache, name, [
-      (toRealVersion(versionPlus), solvedDeps, buildDeps),
+      (toRealVersion(versionPlus), solvedDeps, depsByKind.build),
       ...current
     ]);
 
-    buildDeps @ collectedBuildDeps
+    depsByKind.build @ collectedBuildDeps
   }) |> List.concat;
   if (allBuildDeps != []) {
     processBuildDeps(allBuildDepsCache, cache, allBuildDeps)
@@ -85,14 +100,14 @@ let resolveBuildDep = (cache, (name, req)) => {
 
 let addBuildDepsForSolvedDep = (allBuildDepsCache, cache, solvedDep) => {
   let key = (solvedDep.Lockfile.name, solvedDep.Lockfile.version);
-  let (_, _, buildDeps) = switch (Hashtbl.find(cache.manifests, key)) {
+  let (_, depsByKind) = switch (Hashtbl.find(cache.manifests, key)) {
   | exception Not_found => failwith("No manifest during final resolution")
   | x => x
   };
 
   {
     ...solvedDep,
-    Lockfile.buildDeps: List.map(resolveBuildDep(allBuildDepsCache), buildDeps)
+    Lockfile.buildDeps: List.map(resolveBuildDep(allBuildDepsCache), depsByKind.build)
   }
 };
 
@@ -105,13 +120,13 @@ let solve = (config, manifest) => {
   checkRepositories(config);
   let cache = SolveDeps.initCache(config);
 
-  let (deps, buildDeps, devDeps) = switch manifest {
+  let depsByKind = switch manifest {
   | `OpamFile(file) => OpamFile.process(file)
   | `PackageJson(json) => PackageJson.process(json)
   };
-  let buildDeps = buildDeps @ devDeps;
+  let buildDeps = [];
 
-  let (solvedDeps, collectedBuildDeps) = solveDepsWithBuildDeps(cache, deps);
+  let (solvedDeps, collectedBuildDeps) = solveDepsWithBuildDeps(cache, depsByKind.runtime);
   let allBuildDepsCache = Hashtbl.create(100);
 
   print_endline("Now dev deps");
@@ -120,16 +135,15 @@ let solve = (config, manifest) => {
   let allBuildDeps = Hashtbl.fold(
     (key, items, res) => [(key,
       items |> List.map(((realVersion, solvedDeps, buildDeps)) => {
-        let (manifest, _myDeps, myBuildDeps) = Hashtbl.find(cache.manifests, (key, realVersion));
-        let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest);
+        let (manifest, depsByKind) = Hashtbl.find(cache.manifests, (key, realVersion));
+        /* let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest); */
         ({
           Lockfile.name: key,
           source: lockDownSource(Manifest.getArchive(manifest)),
           opamFile: getOpamFile(manifest, cache.opamOverrides, key, realVersion),
           version: realVersion,
           unpackedLocation: "",
-          requestedDeps,
-          requestedBuildDeps,
+          requestedDeps: depsByKind,
           buildDeps: List.map(resolveBuildDep(allBuildDepsCache), buildDeps)
         }, List.map(addBuildDepsForSolvedDep(allBuildDepsCache, cache), solvedDeps),)
     })
@@ -139,8 +153,7 @@ let solve = (config, manifest) => {
   );
 
   {
-    Lockfile.requestedDeps: deps,
-    requestedBuildDeps: buildDeps,
+    Lockfile.requestedDeps: depsByKind,
     allBuildDeps,
     solvedDeps: List.map(addBuildDepsForSolvedDep(allBuildDepsCache, cache), solvedDeps),
     solvedBuildDeps: List.map(resolveBuildDep(allBuildDepsCache), buildDeps)

@@ -100,8 +100,8 @@ let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
     | `Npm(version, json, _) => `PackageJson(json)
     | `Opam(version, path, _) => `OpamFile(OpamFile.getManifest(opamOverrides, path))
     };
-    let (deps, buildDeps) = Manifest.getDeps(manifest);
-    let res = (manifest, deps, buildDeps);
+    let depsByKind = Manifest.getDeps(manifest);
+    let res = (manifest, depsByKind);
     Hashtbl.replace(cache, (name, realVersion), res);
     res
   }

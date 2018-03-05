@@ -90,7 +90,12 @@ let process = (parsed) => {
     | `Assoc(items) => items
     | _ => failwith("Unexpected value for dev deps")
     };
-    (dependencies |> List.map(toDep), buildDependencies |> List.map(toDep), devDependencies |> List.map(toDep))
+    {
+      Types.runtime: dependencies |> List.map(toDep),
+      build: buildDependencies |> List.map(toDep),
+      dev: devDependencies |> List.map(toDep),
+      npm: []
+    }
   }
   | _ => failwith("Invalid package.json")
   };

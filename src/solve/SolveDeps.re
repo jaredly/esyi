@@ -15,7 +15,7 @@ module T = {
     npmPackages: Hashtbl.t(string, Yojson.Basic.json),
     opamPackages: Hashtbl.t(string, OpamFile.manifest),
     versions: VersionCache.t,
-    manifests: Hashtbl.t((string, Lockfile.realVersion), (manifest, list(Types.dep), list(Types.dep))),
+    manifests: Hashtbl.t((string, Lockfile.realVersion), (manifest, Types.depsByKind)),
   };
 
   type state = {
@@ -93,16 +93,64 @@ let cudfDep = (owner, universe, cudfVersions, (name, source)) => {
   final == [] ? [("**not-a-packge%%%", Some((`Eq, 10000000000)))] : final
 };
 
-let rec addPackage = (name, realVersion, version, deps, buildDeps, state, universe, manifest) => {
+/** TODO need to figure out how to specify what deps we're interested in.
+ *
+ * Maybe a fn: Types.depsByKind => List(Types.dep)
+ *
+ * orr maybe we don't? Maybe
+ *
+ * do we just care about runtime deps?
+ * Do we care about runtime deps being the same as build deps?
+ * kindof, a little. But how do we enforce that?
+ * How do we do that.
+ * Do we care about runtime deps of our build deps being the same as runtime deps of our other build deps?
+ *
+ * whaaat rabbit hole is this even.
+ *
+ * What are the initial constraints?
+ *
+ * For runtime:
+ * - so easy, just bring it all in, require uniqueness, ignoring dev deps at every step
+ * - if there's already a lockfile, then mark those ones as already installed and do "-changed,-notuptodate"
+ *
+ * For [target]:
+ * - do essentially the same thing -- include current installs, try to have minimal changes
+ *
+ * For build:
+ * - try with uniqueness, including all of the ones that got installed for runtime, use "-changed"
+ * - then relax uniqueness & dedup post-hoc
+ *
+ *  > wait this is much more complicated
+ *  > because build deps have runtime deps which have build deps which have runtime deps
+ *
+ * For build:
+ * - all of those runtime deps we got, figure out what build deps they want
+ * - loop until our "pending build deps" list is done
+ *   - filter out all build dep reqs that are already satisfied by packages we've already downloaded
+ *   - run a unique query that doesn't do any transitives - just deduping build requirements
+ *   - if that fails, fallback to a non-unique query
+ *   - now that we know which build deps we want to install, loop through each one
+ *     - for its runtime deps, do a unique with -changed, including all currently installed packages
+ *     - collect all transitive build deps, add them to the list of build deps to get
+ *
+ *
+ *
+ * For npm:
+ * - this is the last step -- npm deps can't loop back to runtime or build deps
+ * - it's easy, because they're all runtime deps. We're solid, just run with it.
+ * - first do a pass with uniqueness
+ * - if it doesn't work, do a pass without uniqueness, and then post-process to remove duplicates where possible
+ */
+let rec addPackage = (name, realVersion, version, depsByKind, state, universe, manifest) => {
   CudfVersions.update(state.cudfVersions, name, realVersion, version);
-  Hashtbl.replace(state.cache.manifests, (name, realVersion), (manifest, deps, buildDeps));
-  List.iter(addToUniverse(state, universe), deps);
+  Hashtbl.replace(state.cache.manifests, (name, realVersion), (manifest, depsByKind));
+  List.iter(addToUniverse(state, universe), depsByKind.runtime);
   let package = {
     ...Cudf.default_package,
     package: name,
     version,
     conflicts: [(name, None)],
-    depends: List.map(cudfDep(name ++ " (at " ++ Shared.Lockfile.viewRealVersion(realVersion) ++ ")", universe, state.cudfVersions), deps)
+    depends: List.map(cudfDep(name ++ " (at " ++ Shared.Lockfile.viewRealVersion(realVersion) ++ ")", universe, state.cudfVersions), depsByKind.runtime)
   };
   Cudf.add_package(universe, package);
 }
@@ -115,8 +163,8 @@ and addToUniverse = (state, universe, (name, source)) => {
     | `Npm(v, _, i) => (`Npm(v), i)
     };
     if (!Hashtbl.mem(state.cudfVersions.lookupIntVersion, (name, realVersion))) {
-      let (manifest, deps, buildDeps) = getCachedManifest(state.cache.opamOverrides, state.cache.manifests, (name, versionPlus));
-      addPackage(name, realVersion, i, deps, buildDeps, state, universe, manifest)
+      let (manifest, depsByKind) = getCachedManifest(state.cache.opamOverrides, state.cache.manifests, (name, versionPlus));
+      addPackage(name, realVersion, i, depsByKind, state, universe, manifest)
     }
   });
 };
@@ -148,8 +196,8 @@ let solveDeps = (cache, deps) => {
       |> List.map(p => {
         let version = CudfVersions.getRealVersion(state.cudfVersions, p);
 
-        let (manifest, requestedDeps, requestedBuildDeps) = Hashtbl.find(state.cache.manifests, (p.Cudf.package, version));
-        (p.Cudf.package, version, manifest, requestedDeps, requestedBuildDeps)
+        let (manifest, depsByKind) = Hashtbl.find(state.cache.manifests, (p.Cudf.package, version));
+        (p.Cudf.package, version, manifest, depsByKind)
       })
     }
     }

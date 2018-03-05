@@ -399,7 +399,8 @@ let getManifest = (opamOverrides, (opam, url, name, version)) => {
 let getArchive = ({source}) => source;
 
 let process = ({deps, buildDeps, devDeps}) => {
-  (deps, buildDeps, devDeps)
+  {Types.runtime: deps @ buildDeps, build: [], dev: devDeps, npm: []}
+  /* (deps, buildDeps, devDeps) */
 };
 
 let commandListToJson = e => e |> List.map(items => `List(List.map(item => `String(item), items)));
