@@ -35,7 +35,7 @@ let makeNpm = ((npmVersionMap, npmToVersions), packages) => {
       }
     }, parentage);
     Env.Npm.({
-      source: Manifest.getArchive(manifest),
+      source: Manifest.getSource(manifest, name, realVersion),
       resolved: realVersion,
       requested: range,
       dependencies: thisLevel |> List.map(((name, contents)) => {
@@ -57,7 +57,7 @@ let makeFullPackage = (name, version, manifest, deps, solvedDeps, buildToVersion
       package: {
         name,
         version,
-        source: SolveDeps.getSourceWithVersion(manifest, version),
+        source: Manifest.getSource(manifest, name, version),
         requested: deps,
         runtime: deps.Types.runtime |> List.map(((name, range)) => (name, range, Hashtbl.find(nameToVersion, name))),
         build: deps.Types.build |> List.map(((name, range)) => (name, range, findSatisfyingInMap(buildToVersions, name, range))),
@@ -66,7 +66,7 @@ let makeFullPackage = (name, version, manifest, deps, solvedDeps, buildToVersion
       runtimeBag: solvedDeps |> List.map(((name, version, manifest, deps)) => {
         name,
         version,
-        source: SolveDeps.getSourceWithVersion(manifest, version),
+        source: Manifest.getSource(manifest, name, version),
         requested: deps,
         runtime: deps.Types.runtime |> List.map(((name, range)) => (name, range, Hashtbl.find(nameToVersion, name))),
         build: deps.Types.build |> List.map(((name, range)) => (name, range, findSatisfyingInMap(buildToVersions, name, range))),

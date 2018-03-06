@@ -106,11 +106,7 @@ let solve = (config, manifest) => {
     (key, items, res) => [(key,
       items |> List.map(((realVersion, solvedDeps, buildDeps)) => {
         let (manifest, depsByKind) = Hashtbl.find(cache.manifests, (key, realVersion));
-        let source = lockDownSource(Manifest.getArchive(manifest));
-        let source = switch (getOpamFile(manifest, cache.opamOverrides, key, realVersion)) {
-        | None => source
-        | Some(f) => Types.Source.WithOpamFile(source, f)
-        };
+        let source = lockDownSource(Manifest.getSource(manifest, key, realVersion));
         /* let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest); */
         ({
           Lockfile.SolvedDep.name: key,

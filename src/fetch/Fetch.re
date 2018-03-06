@@ -64,14 +64,14 @@ let unpackArchive = (dest, cache, {Lockfile.SolvedDep.name, version, source}) =>
         ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> Files.expectSuccess("failed to untar");
       }
     }
-    | WithOpamFile(_) => failwith("Must handle opamfile outside")
     | File(_) => failwith("Cannot handle a file source yet")
     }};
 
     let packageJson = dest /+ "package.json";
-    switch source {
-    | WithOpamFile(source, (packageJson, files, patches)) => {
-      getSource(source);
+    let (source, maybeOpamFile) = source;
+    getSource(source);
+    switch maybeOpamFile {
+    | Some((packageJson, files, patches)) => {
       if (Files.exists(dest /+ "esy.json")) {
         Unix.unlink(dest /+ "esy.json");
       };
@@ -89,8 +89,7 @@ let unpackArchive = (dest, cache, {Lockfile.SolvedDep.name, version, source}) =>
         ) |> snd |> Files.expectSuccess("Failed to patch")
       });
     }
-    | _ => {
-      getSource(source);
+    | None => {
       if (!Files.exists(packageJson)) {
         failwith("No opam file or package.json");
       };

@@ -101,7 +101,7 @@ let process = (parsed) => {
   };
 };
 
-let getArchive = (json) => {
+let getSource = (json) => {
   switch json {
   | `Assoc(items) => {
     switch (List.assoc("dist", items)) {

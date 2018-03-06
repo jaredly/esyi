@@ -85,7 +85,7 @@ type opamFile = (json, list((string, string)), list(string));
 module PendingSource = {
   [@deriving yojson]
   type t =
-    /* | WithOpamFile(t, opamFile) */
+    | WithOpamFile(t, opamFile)
     /* url & checksum */
     | Archive(string, option(string))
     /* url & ref */
@@ -98,8 +98,7 @@ module PendingSource = {
 /** Lock that down */
 module Source = {
   [@deriving yojson]
-  type t =
-    | WithOpamFile(t, opamFile)
+  type inner =
     /* url & checksum */
     | Archive(string, string)
     /* url & commit */
@@ -107,6 +106,8 @@ module Source = {
     | GithubSource(string, string, string)
     | File(string)
     | NoSource;
+  [@deriving yojson]
+  type t = (inner, option(opamFile));
 };
 
 [@deriving yojson]
@@ -117,7 +118,7 @@ type requestedDep =
   | Git(string)
   ;
 
-let resolvedPrefix = "esyi3-";
+let resolvedPrefix = "esyi4-";
 
 [@deriving yojson]
 type dep = (string, requestedDep);
