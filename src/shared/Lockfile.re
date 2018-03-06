@@ -25,10 +25,6 @@ let plainVersionNumber = v => switch v {
 | `File(s) => "local-file-0000"
 };
 
-type json = Yojson.Safe.json;
-let json_to_yojson = x => x;
-let json_of_yojson = x => Result.Ok(x);
-
 let module SolvedDep = {
   [@deriving yojson]
   type t = {
@@ -36,7 +32,7 @@ let module SolvedDep = {
     version: realVersion,
     source: Types.Source.t,
     /* TODO fold this into Source */
-    opamFile: option((json, list((string, string)), list(string))),
+    /* opamFile: option((json, list((string, string)), list(string))), */
     buildDeps: list((string, realVersion)),
     requestedDeps: Types.depsByKind
   };

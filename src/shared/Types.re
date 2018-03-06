@@ -75,9 +75,17 @@ let rec viewOpamConcrete = (Alpha(a, na)) => {
   }
 };
 
+type json = Yojson.Safe.json;
+let json_to_yojson = x => x;
+let json_of_yojson = x => Result.Ok(x);
+
+[@deriving yojson]
+type opamFile = (json, list((string, string)), list(string));
+
 module PendingSource = {
   [@deriving yojson]
   type t =
+    /* | WithOpamFile(t, opamFile) */
     /* url & checksum */
     | Archive(string, option(string))
     /* url & ref */
@@ -91,6 +99,7 @@ module PendingSource = {
 module Source = {
   [@deriving yojson]
   type t =
+    | WithOpamFile(t, opamFile)
     /* url & checksum */
     | Archive(string, string)
     /* url & commit */

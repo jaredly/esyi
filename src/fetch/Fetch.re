@@ -22,13 +22,13 @@ let absname = (name, version) => {
 /**
  * Unpack an archive into place, and then for opam projects create a package.json & apply files / patches.
  */
-let unpackArchive = (dest, cache, {Lockfile.SolvedDep.name, version, opamFile, source}) => {
+let unpackArchive = (dest, cache, {Lockfile.SolvedDep.name, version, source}) => {
   if (Files.isDirectory(dest)) {
     print_endline("Dependency exists -- assuming it is fine " ++ dest)
   } else {
     Files.mkdirp(dest);
 
-    switch source {
+    let getSource = source => {switch source {
     | Types.Source.Archive(url, _checksum) => {
       let safe = Str.global_replace(Str.regexp("/"), "-", name);
       let withVersion = safe ++ Lockfile.viewRealVersion(version);
@@ -64,17 +64,14 @@ let unpackArchive = (dest, cache, {Lockfile.SolvedDep.name, version, opamFile, s
         ExecCommand.execSync(~cmd="tar xf " ++ tarball ++ " --strip-components 1 -C " ++ dest, ()) |> snd |> Files.expectSuccess("failed to untar");
       }
     }
-    };
+    | WithOpamFile(_) => failwith("Must handle opamfile outside")
+    | File(_) => failwith("Cannot handle a file source yet")
+    }};
 
     let packageJson = dest /+ "package.json";
-    switch opamFile {
-    | None => {
-      if (!Files.exists(packageJson)) {
-        failwith("No opam file or package.json");
-      };
-      addResolvedFieldToPackageJson(packageJson, name, version);
-    }
-    | Some((packageJson, files, patches)) => {
+    switch source {
+    | WithOpamFile(source, (packageJson, files, patches)) => {
+      getSource(source);
       if (Files.exists(dest /+ "esy.json")) {
         Unix.unlink(dest /+ "esy.json");
       };
@@ -92,7 +89,14 @@ let unpackArchive = (dest, cache, {Lockfile.SolvedDep.name, version, opamFile, s
         ) |> snd |> Files.expectSuccess("Failed to patch")
       });
     }
+    | _ => {
+      getSource(source);
+      if (!Files.exists(packageJson)) {
+        failwith("No opam file or package.json");
+      };
+      addResolvedFieldToPackageJson(packageJson, name, version);
     }
+    };
   }
 };
 

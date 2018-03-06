@@ -238,10 +238,15 @@ let lockDown = (cache, (name, version, manifest, requestedDeps)) => {
   version: version,
   requestedDeps,
   /* Optimization: this doesn't have to happen until later */
-  source: lockDownSource(switch version {
-  | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
-  | _ => Manifest.getArchive(manifest)}) ,
-  opamFile: getOpamFile(manifest, cache.opamOverrides, name, version),
+  source: {
+    let source = lockDownSource(switch version {
+      | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
+      | _ => Manifest.getArchive(manifest)});
+    switch (getOpamFile(manifest, cache.opamOverrides, name, version)) {
+    | None => source
+    | Some(f) => Types.Source.WithOpamFile(source, f)
+    }
+  },
   buildDeps: [],
 };
 
