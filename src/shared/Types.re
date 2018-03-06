@@ -2,9 +2,52 @@
 [@deriving yojson]
 type npmConcrete = (int, int, int, option(string));
 
-[@deriving yojson]
 type alpha = Alpha(string, option(num))
 and num = Num(int, option(alpha));
+
+let alpha_to_yojson = (Alpha(text, num)) => {
+  let rec lnum = num => switch num {
+  | None => []
+  | Some(Num(n, a)) => [`Int(n), ...lalpha(a)]
+  } and lalpha = alpha => switch alpha {
+  | None => []
+  | Some(Alpha(a, n)) => [`String(a), ...lnum(n)]
+  };
+  `List([`String(text), ...(lnum(num))])
+};
+
+let module ResultInfix = {
+  let (|!>) = (item, fn) => switch item {
+  | Result.Ok(value) => fn(value)
+  | Error(e) => Result.Error(e)
+  };
+  let (|!>>) = (item, fn) => switch item {
+  | Result.Ok(value) => Result.Ok(fn(value))
+  | Error(e) => Result.Error(e)
+  };
+  let ok = v => Result.Ok(v);
+  let fail = v => Result.Error(v);
+};
+
+let alpha_of_yojson = (json) => switch json {
+| `List(items) => {
+  open ResultInfix;
+  let rec lnum = items => switch items {
+  | [] => ok(None)
+  | [`Int(n), ...rest] => lalpha(rest) |!>> r => Some(Num(n, r))
+  | _ => fail("Num should be a number")
+  } and lalpha = items => switch items {
+  | [] => ok(None)
+  | [`String(n), ...rest] => lnum(rest) |!>> r => Some(Alpha(n, r))
+  | _ => fail("Alpha should be string")
+  };
+  lalpha(items) |!> v => switch v {
+  | None => fail("No alpha")
+  | Some(v) => ok(v)
+  };
+}
+| _ => Result.Error("Alpha should be a list")
+};
 
 [@deriving yojson]
 type opamConcrete = alpha;
