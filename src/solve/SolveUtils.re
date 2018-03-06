@@ -90,6 +90,11 @@ let lockDownSource = pendingSource => switch pendingSource {
 }
 };
 
+let checkRepositories = config => {
+  ensureGitRepo("https://github.com/esy-ocaml/esy-opam-override", config.Shared.Types.esyOpamOverrides);
+  ensureGitRepo("https://github.com/ocaml/opam-repository", config.Shared.Types.opamRepository);
+};
+
 let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
   let realVersion = toRealVersion(versionPlus);
   switch (Hashtbl.find(cache, (name, realVersion))) {
@@ -110,7 +115,7 @@ let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
 };
 
 
-let runSolver = (rootName, deps, universe) => {
+let runSolver = (~strategy="-notuptodate", rootName, deps, universe) => {
   let root = {
     ...Cudf.default_package,
     package: rootName,
@@ -124,7 +129,7 @@ let runSolver = (rootName, deps, universe) => {
   };
 
   let preamble = Cudf.default_preamble;
-  let solution = Mccs.resolve_cudf(~verbose=false, ~timeout=5., "-notuptodate", (preamble, universe, request));
+  let solution = Mccs.resolve_cudf(~verbose=false, ~timeout=5., strategy, (preamble, universe, request));
   switch solution {
   | None => None
   | Some((_preamble, universe)) => {

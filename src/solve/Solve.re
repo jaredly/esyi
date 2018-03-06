@@ -6,21 +6,6 @@ open SolveUtils;
 open SolveDeps.T;
 
 
-
-
-
-
-let solve = (config, manifest) => {
-
-};
-
-
-
-
-
-
-
-
 /*
  * This file solves deps + buildDeps
  *
@@ -31,22 +16,11 @@ let solve = (config, manifest) => {
  */
 
 let solveDepsWithBuildDeps = (cache, deps) => {
-  SolveDeps.solveDeps(cache, deps)
-      |> List.fold_left(((deps, buildDeps), (name, version, manifest, requestedDeps)) => {
-
-      ([{
-          Lockfile.name: name,
-          version: version,
-          requestedDeps,
-          source: lockDownSource(switch version {
-          | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
-          | _ => Manifest.getArchive(manifest)}) ,
-          opamFile: getOpamFile(manifest, cache.opamOverrides, name, version),
-          unpackedLocation: "",
-          buildDeps: [],
-        }
-        , ...deps], requestedDeps.build @ buildDeps)
-      }, ([], []))
+  let solvedDeps = SolveDeps.solveDepsForLockfile(cache, deps);
+  let buildDeps = solvedDeps
+  |> List.map(dep => dep.Lockfile.SolvedDep.requestedDeps.build)
+  |> List.concat;
+  (solvedDeps, buildDeps);
 };
 
 let rec processBuildDeps = (allBuildDepsCache, cache, deps) => {
@@ -99,7 +73,8 @@ let resolveBuildDep = (cache, (name, req)) => {
 };
 
 let addBuildDepsForSolvedDep = (allBuildDepsCache, cache, solvedDep) => {
-  let key = (solvedDep.Lockfile.name, solvedDep.Lockfile.version);
+  open Lockfile.SolvedDep;
+  let key = (solvedDep.name, solvedDep.version);
   let (_, depsByKind) = switch (Hashtbl.find(cache.manifests, key)) {
   | exception Not_found => failwith("No manifest during final resolution")
   | x => x
@@ -107,17 +82,12 @@ let addBuildDepsForSolvedDep = (allBuildDepsCache, cache, solvedDep) => {
 
   {
     ...solvedDep,
-    Lockfile.buildDeps: List.map(resolveBuildDep(allBuildDepsCache), depsByKind.build)
+    Lockfile.SolvedDep.buildDeps: List.map(resolveBuildDep(allBuildDepsCache), depsByKind.build)
   }
 };
 
-let checkRepositories = config => {
-  ensureGitRepo("https://github.com/esy-ocaml/esy-opam-override", config.Shared.Types.esyOpamOverrides);
-  ensureGitRepo("https://github.com/ocaml/opam-repository", config.Shared.Types.opamRepository);
-};
-
 let solve = (config, manifest) => {
-  checkRepositories(config);
+  SolveUtils.checkRepositories(config);
   let cache = SolveDeps.initCache(config);
 
   let depsByKind = switch manifest {
@@ -138,11 +108,10 @@ let solve = (config, manifest) => {
         let (manifest, depsByKind) = Hashtbl.find(cache.manifests, (key, realVersion));
         /* let (requestedDeps, requestedBuildDeps) = Manifest.getDeps(manifest); */
         ({
-          Lockfile.name: key,
+          Lockfile.SolvedDep.name: key,
           source: lockDownSource(Manifest.getArchive(manifest)),
           opamFile: getOpamFile(manifest, cache.opamOverrides, key, realVersion),
           version: realVersion,
-          unpackedLocation: "",
           requestedDeps: depsByKind,
           buildDeps: List.map(resolveBuildDep(allBuildDepsCache), buildDeps)
         }, List.map(addBuildDepsForSolvedDep(allBuildDepsCache, cache), solvedDeps),)

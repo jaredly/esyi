@@ -22,7 +22,7 @@ let absname = (name, version) => {
 /**
  * Unpack an archive into place, and then for opam projects create a package.json & apply files / patches.
  */
-let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) => {
+let unpackArchive = (dest, cache, {Lockfile.SolvedDep.name, version, opamFile, source}) => {
   if (Files.isDirectory(dest)) {
     print_endline("Dependency exists -- assuming it is fine " ++ dest)
   } else {
@@ -97,7 +97,7 @@ let unpackArchive = (dest, cache, {Lockfile.name, version, opamFile, source}) =>
 };
 
 /* Get a package and its children & build deps */
-let rec fetchDep = (modcache, cache, {Lockfile.name, version} as dep, childDeps) => {
+let rec fetchDep = (modcache, cache, {Lockfile.SolvedDep.name, version} as dep, childDeps) => {
   let base = modcache /+ absname(name, version);
   if (Files.exists(base)) {
     ()
@@ -105,7 +105,7 @@ let rec fetchDep = (modcache, cache, {Lockfile.name, version} as dep, childDeps)
     unpackArchive(base, cache, dep);
 
     childDeps |> List.iter((childDep) => {
-      let dest = base /+ "node_modules" /+ childDep.Shared.Lockfile.name;
+      let dest = base /+ "node_modules" /+ childDep.Shared.Lockfile.SolvedDep.name;
       if (Files.exists(dest)) {
         print_endline("Dev dep conflicting with a normal dep -- this isn't handled correctly by esy b yet " ++ dest);
       } else {

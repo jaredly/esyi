@@ -56,7 +56,7 @@ module Source = {
 };
 
 [@deriving yojson]
-type depSource =
+type requestedDep =
   | Npm(GenericVersion.range(npmConcrete))
   | Github(string, string, option(string)) /* user, repo, ref (branch/tag/commit) */
   | Opam(GenericVersion.range(opamConcrete)) /* opam allows a bunch of weird stuff. for now I'm just doing semver */
@@ -66,7 +66,7 @@ type depSource =
 let resolvedPrefix = "esyi3-";
 
 [@deriving yojson]
-type dep = (string, depSource);
+type dep = (string, requestedDep);
 
 [@deriving yojson]
 type depsByKind = {

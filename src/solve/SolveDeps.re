@@ -93,7 +93,7 @@ let cudfDep = (owner, universe, cudfVersions, (name, source)) => {
   final == [] ? [("**not-a-packge%%%", Some((`Eq, 10000000000)))] : final
 };
 
-/** TODO need to figure out how to specify what deps we're interested in.
+/* TODO need to figure out how to specify what deps we're interested in.
  *
  * Maybe a fn: Types.depsByKind => List(Types.dep)
  *
@@ -117,13 +117,6 @@ let cudfDep = (owner, universe, cudfVersions, (name, source)) => {
  * - do essentially the same thing -- include current installs, try to have minimal changes
  *
  * For build:
- * - try with uniqueness, including all of the ones that got installed for runtime, use "-changed"
- * - then relax uniqueness & dedup post-hoc
- *
- *  > wait this is much more complicated
- *  > because build deps have runtime deps which have build deps which have runtime deps
- *
- * For build:
  * - all of those runtime deps we got, figure out what build deps they want
  * - loop until our "pending build deps" list is done
  *   - filter out all build dep reqs that are already satisfied by packages we've already downloaded
@@ -141,21 +134,59 @@ let cudfDep = (owner, universe, cudfVersions, (name, source)) => {
  * - first do a pass with uniqueness
  * - if it doesn't work, do a pass without uniqueness, and then post-process to remove duplicates where possible
  */
-let rec addPackage = (name, realVersion, version, depsByKind, state, universe, manifest) => {
+
+/*
+ * type fullPackage =
+ * - source:
+ * - version: (yeah this isn't as relevant)
+ * - runtime:
+ *   - [name]:
+ *     - (name, versionRange, realVersion)
+ * - build:
+ *   - (name, versionRange, realVersion)
+ * - npm:
+ *   - [name]:
+ *     - requestedVersion:
+ *     - resolvedVersion:
+ *     - dependencies:
+ *       - [name]: // only listed if this dep isn't satisfied at a higher level
+ *         (recurse)
+ *
+ * Currently we have:
+ * - targets:
+ *   [target=default,ios,etc.]:
+ *    - package:
+ *      {fullPackage}
+ *    - runtimeBag:
+ *      - [name]:
+ *        {fullPackage}
+ *
+ * - buildDependencies:
+ *   [name:version]
+ *    - package:
+ *      {fullPackage}
+ *    - runtimeBag:
+ *      - [name]:
+ *        {fullPackage}
+ *
+ */
+
+let rec addPackage = (~unique, ~previouslyInstalled, name, realVersion, version, depsByKind, state, universe, manifest) => {
   CudfVersions.update(state.cudfVersions, name, realVersion, version);
   Hashtbl.replace(state.cache.manifests, (name, realVersion), (manifest, depsByKind));
-  List.iter(addToUniverse(state, universe), depsByKind.runtime);
+  List.iter(addToUniverse(~unique, ~previouslyInstalled, state, universe), depsByKind.runtime);
   let package = {
     ...Cudf.default_package,
     package: name,
     version,
-    conflicts: [(name, None)],
+    conflicts: unique ? [(name, None)] : [],
+    installed: switch (previouslyInstalled) { | None => false | Some(table) => Hashtbl.mem(table, (name, realVersion)) },
     depends: List.map(cudfDep(name ++ " (at " ++ Shared.Lockfile.viewRealVersion(realVersion) ++ ")", universe, state.cudfVersions), depsByKind.runtime)
   };
   Cudf.add_package(universe, package);
 }
 
-and addToUniverse = (state, universe, (name, source)) => {
+and addToUniverse = (~unique, ~previouslyInstalled, state, universe, (name, source)) => {
   VersionCache.getAvailableVersions(state.cache.versions, (name, source)) |> List.iter(versionPlus => {
     let (realVersion, i) = switch versionPlus {
     | `Github(v) => (`Github(v), 1)
@@ -164,18 +195,17 @@ and addToUniverse = (state, universe, (name, source)) => {
     };
     if (!Hashtbl.mem(state.cudfVersions.lookupIntVersion, (name, realVersion))) {
       let (manifest, depsByKind) = getCachedManifest(state.cache.opamOverrides, state.cache.manifests, (name, versionPlus));
-      addPackage(name, realVersion, i, depsByKind, state, universe, manifest)
+      addPackage(~unique, ~previouslyInstalled, name, realVersion, i, depsByKind, state, universe, manifest)
     }
   });
 };
 
 let rootName = "*root*";
 
-let solveDeps = (cache, deps) => {
+let solveDeps = (~unique, ~strategy, ~previouslyInstalled=?, cache, deps) => {
   if (deps == []) {
     []
   } else {
-
     let universe = Cudf.empty_universe();
     let state = {
       cache,
@@ -183,14 +213,13 @@ let solveDeps = (cache, deps) => {
     };
 
     /** This is where most of the work happens, file io, network requests, etc. */
-    List.iter(addToUniverse(state, universe), deps);
+    List.iter(addToUniverse(~unique, ~previouslyInstalled, state, universe), deps);
 
     /** Here we invoke the solver! Might also take a while, but probably won't */
     let cudfDeps = List.map(cudfDep(rootName, universe, state.cudfVersions), deps);
-    switch (runSolver(rootName, cudfDeps, universe)) {
+    switch (runSolver(~strategy, rootName, cudfDeps, universe)) {
     | None => failwith("Unable to resolve")
     | Some(packages) => {
-      /* print_endline("Installed packages:"); */
       packages
       |> List.filter(p => p.Cudf.package != rootName)
       |> List.map(p => {
@@ -198,8 +227,60 @@ let solveDeps = (cache, deps) => {
 
         let (manifest, depsByKind) = Hashtbl.find(state.cache.manifests, (p.Cudf.package, version));
         (p.Cudf.package, version, manifest, depsByKind)
-      })
+      });
     }
     }
   };
+};
+
+let lockDown = (cache, (name, version, manifest, requestedDeps)) => {
+  Lockfile.SolvedDep.name: name,
+  version: version,
+  requestedDeps,
+  /* Optimization: this doesn't have to happen until later */
+  source: lockDownSource(switch version {
+  | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
+  | _ => Manifest.getArchive(manifest)}) ,
+  opamFile: getOpamFile(manifest, cache.opamOverrides, name, version),
+  buildDeps: [],
+};
+
+let module Strategies = {
+  let initial = "-notuptodate";
+  let greatestOverlap = "-changed,-notuptodate";
+};
+
+let solveDepsForLockfile = (~unique=true, cache, deps) => {
+  solveDeps(~unique, ~strategy=Strategies.initial, ~previouslyInstalled=Hashtbl.create(0), cache, deps) |> List.map(lockDown(cache))
+};
+
+/** TODO untested */
+let crawlDeps = (requested, installed) => {
+  let depsTable = Hashtbl.create(100);
+  installed |> List.iter(((name, version, _, deps)) => {
+    Hashtbl.add(depsTable, name, deps)
+  });
+  let traversed = Hashtbl.create(100);
+  let rec loop = (name) => {
+    Hashtbl.replace(traversed, name, true);
+    Hashtbl.find(depsTable, name).Types.runtime |> List.iter(((child, _)) => {
+      if (!Hashtbl.mem(traversed, child)) loop(child)
+    })
+  };
+  requested |> List.iter(((name, _)) => loop(name));
+  installed |> List.filter(((name, _, _, _)) => Hashtbl.mem(traversed, name))
+};
+
+/** TODO untested */
+let solveWithAsMuchOverlapAsPossible = (~cache, ~requested, ~current) => {
+  let previouslyInstalled = Hashtbl.create(100);
+  current |> List.iter(({Lockfile.SolvedDep.name, version}) => Hashtbl.add(previouslyInstalled, (name, version), 1));
+  let installed = solveDeps(
+    ~unique=true,
+    ~strategy=Strategies.greatestOverlap,
+    ~previouslyInstalled,
+    cache,
+    requested
+  );
+  crawlDeps(requested, installed) |> List.map(lockDown(cache))
 };
