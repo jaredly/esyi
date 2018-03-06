@@ -40,6 +40,7 @@ module PendingSource = {
     /* url & ref */
     | GitSource(string, option(string))
     | GithubSource(string, string, option(string))
+    | File(string)
     | NoSource;
 };
 
@@ -52,6 +53,7 @@ module Source = {
     /* url & commit */
     | GitSource(string, string)
     | GithubSource(string, string, string)
+    | File(string)
     | NoSource;
 };
 

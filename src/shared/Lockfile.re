@@ -5,6 +5,7 @@ type realVersion = [
   | `Npm(Types.npmConcrete)
   | `Opam(Types.opamConcrete)
   | `Git(string)
+  | `File(string)
 ];
 
 let viewRealVersion: realVersion => string = v => switch v {
@@ -12,6 +13,7 @@ let viewRealVersion: realVersion => string = v => switch v {
 | `Git(s) => "git-" ++ s
 | `Npm(t) => "npm-" ++ Types.viewNpmConcrete(t)
 | `Opam(t) => "opam-" ++ Types.viewOpamConcrete(t)
+| `File(s) => "local-file"
 };
 
 let plainVersionNumber = v => switch v {
@@ -19,6 +21,8 @@ let plainVersionNumber = v => switch v {
 | `Git(s) => s
 | `Npm(t) => Types.viewNpmConcrete(t)
 | `Opam(t) => Types.viewOpamConcrete(t)
+/* TODO hash the file path or something */
+| `File(s) => "local-file-0000"
 };
 
 type json = Yojson.Safe.json;

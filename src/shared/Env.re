@@ -1,31 +1,38 @@
 
 module Npm = {
+  [@deriving yojson]
   type t('sourceType) = {
     source: 'sourceType,
-    resolved: Shared.Types.npmConcrete,
-    requested: Shared.Types.npmRange,
+    resolved: Lockfile.realVersion,
+    requested: Types.requestedDep,
     dependencies: list((string, option(t('sourceType))))
   };
 };
 
-type resolved = (string, Shared.Types.requestedDep, Shared.Lockfile.realVersion);
+[@deriving yojson]
+type resolved = (string, Types.requestedDep, Lockfile.realVersion);
 
+[@deriving yojson]
 type fullPackage('sourceType) = {
   name: string,
-  version: Shared.Lockfile.realVersion,
+  version: Lockfile.realVersion,
   source: 'sourceType, /* pending until I need to lock it down */
+  requested: Types.depsByKind,
   runtime: list(resolved),
   build: list(resolved),
   npm: list((string, Npm.t('sourceType))),
 };
 
+[@deriving yojson]
 type rootPackage('sourceType) = {
   package: fullPackage('sourceType),
   runtimeBag: list(fullPackage('sourceType))
 };
 
+[@deriving yojson]
 type target = Default | Arch(string) | ArchSubArch(string, string);
 
+[@deriving yojson]
 type t('sourceType) = {
   targets: list((target, rootPackage('sourceType))),
   buildDependencies: list(rootPackage('sourceType))

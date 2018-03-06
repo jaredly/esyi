@@ -171,22 +171,22 @@ let cudfDep = (owner, universe, cudfVersions, (name, source)) => {
  *
  */
 
-let rec addPackage = (~unique, ~previouslyInstalled, name, realVersion, version, depsByKind, state, universe, manifest) => {
+let rec addPackage = (~unique, ~previouslyInstalled, ~deep, name, realVersion, version, depsByKind, state, universe, manifest) => {
   CudfVersions.update(state.cudfVersions, name, realVersion, version);
   Hashtbl.replace(state.cache.manifests, (name, realVersion), (manifest, depsByKind));
-  List.iter(addToUniverse(~unique, ~previouslyInstalled, state, universe), depsByKind.runtime);
+  deep ? List.iter(addToUniverse(~unique, ~previouslyInstalled, ~deep, state, universe), depsByKind.runtime) : ();
   let package = {
     ...Cudf.default_package,
     package: name,
     version,
     conflicts: unique ? [(name, None)] : [],
     installed: switch (previouslyInstalled) { | None => false | Some(table) => Hashtbl.mem(table, (name, realVersion)) },
-    depends: List.map(cudfDep(name ++ " (at " ++ Shared.Lockfile.viewRealVersion(realVersion) ++ ")", universe, state.cudfVersions), depsByKind.runtime)
+    depends: deep ? List.map(cudfDep(name ++ " (at " ++ Shared.Lockfile.viewRealVersion(realVersion) ++ ")", universe, state.cudfVersions), depsByKind.runtime) : []
   };
   Cudf.add_package(universe, package);
 }
 
-and addToUniverse = (~unique, ~previouslyInstalled, state, universe, (name, source)) => {
+and addToUniverse = (~unique, ~previouslyInstalled, ~deep, state, universe, (name, source)) => {
   VersionCache.getAvailableVersions(state.cache.versions, (name, source)) |> List.iter(versionPlus => {
     let (realVersion, i) = switch versionPlus {
     | `Github(v) => (`Github(v), 1)
@@ -195,14 +195,14 @@ and addToUniverse = (~unique, ~previouslyInstalled, state, universe, (name, sour
     };
     if (!Hashtbl.mem(state.cudfVersions.lookupIntVersion, (name, realVersion))) {
       let (manifest, depsByKind) = getCachedManifest(state.cache.opamOverrides, state.cache.manifests, (name, versionPlus));
-      addPackage(~unique, ~previouslyInstalled, name, realVersion, i, depsByKind, state, universe, manifest)
+      addPackage(~unique, ~previouslyInstalled, ~deep, name, realVersion, i, depsByKind, state, universe, manifest)
     }
   });
 };
 
 let rootName = "*root*";
 
-let solveDeps = (~unique, ~strategy, ~previouslyInstalled=?, cache, deps) => {
+let solveDeps = (~unique, ~strategy, ~previouslyInstalled=?, ~deep=true, cache, deps) => {
   if (deps == []) {
     []
   } else {
@@ -213,7 +213,7 @@ let solveDeps = (~unique, ~strategy, ~previouslyInstalled=?, cache, deps) => {
     };
 
     /** This is where most of the work happens, file io, network requests, etc. */
-    List.iter(addToUniverse(~unique, ~previouslyInstalled, state, universe), deps);
+    List.iter(addToUniverse(~unique, ~previouslyInstalled, ~deep, state, universe), deps);
 
     /** Here we invoke the solver! Might also take a while, but probably won't */
     let cudfDeps = List.map(cudfDep(rootName, universe, state.cudfVersions), deps);
@@ -251,7 +251,15 @@ let module Strategies = {
 };
 
 let solveDepsForLockfile = (~unique=true, cache, deps) => {
-  solveDeps(~unique, ~strategy=Strategies.initial, ~previouslyInstalled=Hashtbl.create(0), cache, deps) |> List.map(lockDown(cache))
+  solveDeps(~unique, ~strategy=Strategies.initial, ~deep=true, cache, deps) |> List.map(lockDown(cache))
+};
+
+
+
+/* New style! */
+
+let solve = (~cache, ~requested) => {
+  solveDeps(~unique=true, ~strategy=Strategies.initial, ~deep=true, cache, requested);
 };
 
 /** TODO untested */
@@ -279,8 +287,53 @@ let solveWithAsMuchOverlapAsPossible = (~cache, ~requested, ~current) => {
     ~unique=true,
     ~strategy=Strategies.greatestOverlap,
     ~previouslyInstalled,
+    ~deep=true,
     cache,
     requested
   );
   crawlDeps(requested, installed) |> List.map(lockDown(cache))
+};
+
+let makeVersionMap = installed => {
+  let map = Hashtbl.create(100);
+  installed |> List.iter(((name, version, _, _)) => {
+    let current = Hashtbl.mem(map, name) ? Hashtbl.find(map, name) : [];
+    Hashtbl.replace(map, name, [version, ...current])
+  });
+    /* TODO sort the entries... so we get the latest when possible */
+  map
+};
+
+/**
+ * - we allow multiple versions
+ * - we provide a list of modules that are already installed
+ * - if we want, we only go one level deep
+ */
+let solveLoose = (~cache, ~requested, ~current, ~deep) => {
+  let previouslyInstalled = Hashtbl.create(100);
+  current |> Hashtbl.iter((name, versions) => versions |> List.iter(version => Hashtbl.add(previouslyInstalled, (name, version), true)));
+  /* current |> List.iter(({Lockfile.SolvedDep.name, version}) => Hashtbl.add(previouslyInstalled, (name, version), 1)); */
+  let installed = solveDeps(
+    ~unique=true,
+    ~strategy=Strategies.greatestOverlap,
+    ~previouslyInstalled,
+    ~deep,
+    cache,
+    requested
+  );
+  if (deep) {
+    assert(false) /* TODO */
+  } else {
+    let versionMap = makeVersionMap(installed);
+    let touched = Hashtbl.create(100);
+    requested |> List.iter(((name, range)) => {
+      let versions = Hashtbl.find(versionMap, name);
+      let matching = versions |> List.filter(real => SolveUtils.satisfies(real, range));
+      switch matching {
+      | [] => failwith("Didn't actully install a matching dep for " ++ name)
+      | [one, ..._] => Hashtbl.replace(touched, (name, one), true)
+      }
+    });
+    installed |> List.filter(((name, version, _, _)) => Hashtbl.mem(touched, (name, version)))
+  }
 };
