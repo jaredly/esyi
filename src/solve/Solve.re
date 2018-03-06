@@ -128,3 +128,8 @@ let solve = (config, manifest) => {
     solvedBuildDeps: List.map(resolveBuildDep(allBuildDepsCache), buildDeps)
   };
 };
+
+
+let solveNew = (config, manifest) => {
+  SolveNew.solve(config, manifest)
+};

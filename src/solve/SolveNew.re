@@ -57,7 +57,7 @@ let makeFullPackage = (name, version, manifest, deps, solvedDeps, buildToVersion
       package: {
         name,
         version,
-        source: Manifest.getArchive(manifest),
+        source: SolveDeps.getSourceWithVersion(manifest, version),
         requested: deps,
         runtime: deps.Types.runtime |> List.map(((name, range)) => (name, range, Hashtbl.find(nameToVersion, name))),
         build: deps.Types.build |> List.map(((name, range)) => (name, range, findSatisfyingInMap(buildToVersions, name, range))),
@@ -66,7 +66,7 @@ let makeFullPackage = (name, version, manifest, deps, solvedDeps, buildToVersion
       runtimeBag: solvedDeps |> List.map(((name, version, manifest, deps)) => {
         name,
         version,
-        source: Manifest.getArchive(manifest),
+        source: SolveDeps.getSourceWithVersion(manifest, version),
         requested: deps,
         runtime: deps.Types.runtime |> List.map(((name, range)) => (name, range, Hashtbl.find(nameToVersion, name))),
         build: deps.Types.build |> List.map(((name, range)) => (name, range, findSatisfyingInMap(buildToVersions, name, range))),
@@ -76,7 +76,7 @@ let makeFullPackage = (name, version, manifest, deps, solvedDeps, buildToVersion
 };
 
 let settleBuildDeps = (cache, solvedDeps, requestedBuildDeps) => {
-  let allTransitiveBuildDeps = solvedDeps |> List.map(justDepsn) |> List.map(deps => deps.Types.runtime) |> List.concat;
+  let allTransitiveBuildDeps = solvedDeps |> List.map(justDepsn) |> List.map(deps => deps.Types.build) |> List.concat;
   /* let allTransitiveBuildDeps = allNeededBuildDeps @ (
     solvedTargets |> List.map(((_, deps)) => getBuildDeps(deps)) |> List.concat |> List.concat
   ); */
@@ -168,8 +168,10 @@ let solve = (config, manifest) => {
     [makeFullPackage(name, version, manifest, deps, solvedDeps, buildToVersions, npmPair), ...result]
   }, buildVersionMap, []);
 
-  {
-    Env.targets: [(Env.Default, makeFullPackage("*root*", `File("/"), manifest, depsByKind, solvedDeps, buildToVersions, npmPair))],
+  let env = {
+    Env.targets: [(Env.Default, makeFullPackage("*root*", `File("./"), manifest, depsByKind, solvedDeps, buildToVersions, npmPair))],
     buildDependencies: allBuildPackages,
-  }
+  };
+
+  Env.map(SolveUtils.lockDownSource, env)
 };

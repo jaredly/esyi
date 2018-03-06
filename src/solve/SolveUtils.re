@@ -88,6 +88,7 @@ let lockDownSource = pendingSource => switch pendingSource {
   let ref = Shared.Infix.(ref |? "master");
   Types.Source.GithubSource(user, name, lockDownRef("git://github.com/" ++ user ++ "/" ++ name ++ ".git", ref))
 }
+| File(s) => Types.Source.File(s)
 };
 
 let checkRepositories = config => {

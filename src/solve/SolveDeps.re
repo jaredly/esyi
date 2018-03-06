@@ -245,6 +245,14 @@ let lockDown = (cache, (name, version, manifest, requestedDeps)) => {
   buildDeps: [],
 };
 
+let getSourceWithVersion = (manifest, version) => {
+  switch version {
+    | `Github(user, repo, ref) => Types.PendingSource.GithubSource(user, repo, ref)
+    | `File(path) => Types.PendingSource.File(path)
+    | _ => Manifest.getArchive(manifest)
+  }
+};
+
 let module Strategies = {
   let initial = "-notuptodate";
   let greatestOverlap = "-changed,-notuptodate";
@@ -325,6 +333,14 @@ let solveLoose = (~cache, ~requested, ~current, ~deep) => {
     assert(false) /* TODO */
   } else {
     let versionMap = makeVersionMap(installed);
+    print_endline("Build deps now");
+    requested |> List.iter(((name, range)) => {
+      print_endline(name);
+    });
+    print_endline("Got");
+    installed |> List.iter(((name, version, _, _)) => {
+      print_endline(name);
+    });
     let touched = Hashtbl.create(100);
     requested |> List.iter(((name, range)) => {
       let versions = Hashtbl.find(versionMap, name);

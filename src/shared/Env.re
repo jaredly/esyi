@@ -49,7 +49,8 @@ let rec mapNpm = (mapper, npm) => {
 
 let mapFull = (mapper, full) => {
   ...full,
-  source: mapper(full.source)
+  source: mapper(full.source),
+  npm: List.map(mapSnd(mapNpm(mapper)), full.npm)
 };
 
 let mapRoot = (mapper, root) => {
