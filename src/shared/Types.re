@@ -118,7 +118,7 @@ type requestedDep =
   | Git(string)
   ;
 
-let resolvedPrefix = "esyi4-";
+let resolvedPrefix = "esyi5-";
 
 [@deriving yojson]
 type dep = (string, requestedDep);

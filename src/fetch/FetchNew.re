@@ -15,8 +15,19 @@ let fetch = (basedir, env) => {
   Shared.Files.mkdirp(cache);
   let modcache = basedir /+ ".esy-modules-new";
 
+  let nodeModules = basedir /+ "node_modules";
+  Shared.Files.removeDeep(nodeModules);
+  Shared.Files.mkdirp(nodeModules);
+
   Hashtbl.iter(((name, version), source) => {
     let dest = modcache /+ FetchUtils.absname(name, version);
-    FetchUtils.unpackArchive(dest, cache, name, version, source)
-  }, packagesToFetch)
+    FetchUtils.unpackArchive(dest, cache, name, version, source);
+    let nmDest = nodeModules /+ name;
+    if (Shared.Files.exists(nmDest)) {
+      failwith("Duplicate modules")
+    };
+    Shared.Files.mkdirp(Filename.dirname(nmDest));
+    Shared.Files.symlink(dest, nmDest);
+  }, packagesToFetch);
+
 };
