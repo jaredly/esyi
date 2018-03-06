@@ -77,3 +77,5 @@ let fetch = (basedir, lockfile) => {
     }
   })
 };
+
+let fetchNew = FetchNew.fetch;

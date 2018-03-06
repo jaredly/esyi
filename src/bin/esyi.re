@@ -47,12 +47,23 @@ let fetch = (basedir) => {
   Fetch.fetch(basedir, lockfile);
 };
 
+let fetchNew = (basedir) => {
+  let json = Yojson.Safe.from_file(basedir /+ "esyi.new.lock.json");
+  let env = switch (Shared.Env.of_yojson(Shared.Types.Source.of_yojson, json)) {
+  | Error(a) => failwith("Bad lockfile")
+  | Ok(a) => a
+  };
+  Shared.Files.removeDeep(basedir /+ "node_modules");
+  Fetch.fetchNew(basedir, env);
+};
+
 Printexc.record_backtrace(true);
 
 switch (Sys.argv) {
   | [|_, "solve", basedir|] => solve(basedir)
   | [|_, "solve-new", basedir|] => solveNew(basedir)
   | [|_, "fetch", basedir|] => fetch(basedir)
+  | [|_, "fetch-new", basedir|] => fetchNew(basedir)
   | [|_, basedir|] => {
     solve(basedir);
     fetch(basedir);

@@ -5,6 +5,11 @@ let (/+) = Filename.concat;
 
 let resolvedString = (name, version) => Types.resolvedPrefix ++ name ++ "--" ++ Lockfile.viewRealVersion(version);
 
+/** Hack to always cache the ocaml build :P */
+let resolveString = (name, version) => name == "ocaml"
+  ? "esyi4-" ++ name ++ "--" ++ Lockfile.viewRealVersion(version)
+  : resolvedString(name, version);
+
 let addResolvedFieldToPackageJson = (filename, name, version) => {
   let json = switch (Yojson.Basic.from_file(filename)) {
   | `Assoc(items) => items
