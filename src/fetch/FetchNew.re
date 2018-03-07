@@ -11,11 +11,11 @@ let fetch = (basedir, env) => {
     List.iter(addPackage, runtimeBag)
   });
 
-  let cache = basedir /+ ".esy-cache-new" /+ "archives";
-  Shared.Files.mkdirp(cache);
-  let modcache = basedir /+ ".esy-modules-new";
-
   let nodeModules = basedir /+ "node_modules";
+  let cache = nodeModules /+ ".esy-cache-archives";
+  Shared.Files.mkdirp(cache);
+  let modcache = nodeModules /+ ".esy-unpacked";
+
   Shared.Files.removeDeep(nodeModules);
   Shared.Files.mkdirp(nodeModules);
 
