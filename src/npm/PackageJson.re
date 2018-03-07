@@ -72,7 +72,7 @@ let toDep = ((name, value)) => {
  *
  */
 let process = (parsed) => {
-  /* let parsed = Yojson.Basic.from_string(contents); */
+  /* TODO detect npm dependencies */
   switch parsed {
   | `Assoc(items) => {
     let dependencies = switch (List.assoc("dependencies", items)) {
@@ -101,7 +101,7 @@ let process = (parsed) => {
   };
 };
 
-let getArchive = (json) => {
+let getSource = (json) => {
   switch json {
   | `Assoc(items) => {
     switch (List.assoc("dist", items)) {

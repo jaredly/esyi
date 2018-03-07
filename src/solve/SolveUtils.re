@@ -72,22 +72,37 @@ let lockDownRef = (url, ref) => {
   }
 };
 
-let lockDownSource = pendingSource => switch pendingSource {
-| Types.PendingSource.NoSource => Types.Source.NoSource
+let rec lockDownSource = pendingSource => switch pendingSource {
+| Types.PendingSource.NoSource => (Types.Source.NoSource, None)
+| WithOpamFile(source, opamFile) => switch (lockDownSource(source)) {
+  | (s, None) => (s, Some(opamFile))
+  | _ => failwith("can't nest withOpamFiles inside each other")
+}
 | Archive(url, None) => {
   /* print_endline("Pretending to get a checksum for " ++ url); */
-  Types.Source.Archive(url, "fake checksum")
+  (Types.Source.Archive(url, "fake checksum"), None)
 }
-| Archive(url, Some(checksum)) => Types.Source.Archive(url, checksum)
+| Archive(url, Some(checksum)) => (Types.Source.Archive(url, checksum), None)
 | GitSource(url, ref) => {
   let ref = Shared.Infix.(ref |? "master");
   /** TODO getting HEAD */
-  Types.Source.GitSource(url, lockDownRef(url, ref))
+  (Types.Source.GitSource(url, lockDownRef(url, ref)), None)
 }
 | GithubSource(user, name, ref) => {
   let ref = Shared.Infix.(ref |? "master");
-  Types.Source.GithubSource(user, name, lockDownRef("git://github.com/" ++ user ++ "/" ++ name ++ ".git", ref))
+  (Types.Source.GithubSource(user, name, lockDownRef("git://github.com/" ++ user ++ "/" ++ name ++ ".git", ref)), None)
 }
+| File(s) => (Types.Source.File(s), None)
+};
+
+/* let lockDownWithOpam = (pending, opam) => switch opam {
+| Some(s) => lockDownSource(Types.PendingSource.WithOpamFile(pending, s))
+| _ => lockDownSource(pending)
+}; */
+
+let checkRepositories = config => {
+  ensureGitRepo("https://github.com/esy-ocaml/esy-opam-override", config.Shared.Types.esyOpamOverrides);
+  ensureGitRepo("https://github.com/ocaml/opam-repository", config.Shared.Types.opamRepository);
 };
 
 let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
@@ -110,7 +125,7 @@ let getCachedManifest = (opamOverrides, cache, (name, versionPlus)) => {
 };
 
 
-let runSolver = (rootName, deps, universe) => {
+let runSolver = (~strategy="-notuptodate", rootName, deps, universe) => {
   let root = {
     ...Cudf.default_package,
     package: rootName,
@@ -124,7 +139,7 @@ let runSolver = (rootName, deps, universe) => {
   };
 
   let preamble = Cudf.default_preamble;
-  let solution = Mccs.resolve_cudf(~verbose=false, ~timeout=5., "-notuptodate", (preamble, universe, request));
+  let solution = Mccs.resolve_cudf(~verbose=false, ~timeout=5., strategy, (preamble, universe, request));
   switch solution {
   | None => None
   | Some((_preamble, universe)) => {
@@ -134,9 +149,9 @@ let runSolver = (rootName, deps, universe) => {
   }
 };
 
-let getOpamFile = (manifest, opamOverrides, name, version) => {
+let getOpamFile = (manifest, name, version) => {
   switch manifest {
   | `PackageJson(_) => None
-  | `OpamFile({OpamFile.fileName}) => Some(OpamFile.toPackageJson(opamOverrides, fileName, name, version))
+  | `OpamFile(manifest) => Some(OpamFile.toPackageJson(manifest, name, version))
   }
 };

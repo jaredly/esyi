@@ -5,6 +5,7 @@ type realVersion = [
   | `Npm(Types.npmConcrete)
   | `Opam(Types.opamConcrete)
   | `Git(string)
+  | `File(string)
 ];
 
 let viewRealVersion: realVersion => string = v => switch v {
@@ -12,6 +13,7 @@ let viewRealVersion: realVersion => string = v => switch v {
 | `Git(s) => "git-" ++ s
 | `Npm(t) => "npm-" ++ Types.viewNpmConcrete(t)
 | `Opam(t) => "opam-" ++ Types.viewOpamConcrete(t)
+| `File(s) => "local-file"
 };
 
 let plainVersionNumber = v => switch v {
@@ -19,33 +21,33 @@ let plainVersionNumber = v => switch v {
 | `Git(s) => s
 | `Npm(t) => Types.viewNpmConcrete(t)
 | `Opam(t) => Types.viewOpamConcrete(t)
+/* TODO hash the file path or something */
+| `File(s) => "local-file-0000"
 };
 
-type json = Yojson.Safe.json;
-let json_to_yojson = x => x;
-let json_of_yojson = x => Result.Ok(x);
+let module SolvedDep = {
+  [@deriving yojson]
+  type t = {
+    name: string,
+    version: realVersion,
+    source: Types.Source.t,
+    /* TODO fold this into Source */
+    /* opamFile: option((json, list((string, string)), list(string))), */
+    buildDeps: list((string, realVersion)),
+    requestedDeps: Types.depsByKind
+  };
+};
 
 [@deriving yojson]
-type solvedDep = {
-  name: string,
-  version: realVersion,
-  source: Types.Source.t,
-  opamFile: option((json, list((string, string)), list(string))),
-  unpackedLocation: string,
-  buildDeps: list((string, realVersion)),
-  requestedDeps: Types.depsByKind
-}
-
-[@deriving yojson]
-and lockfile = {
+type lockfile = {
   requestedDeps: Types.depsByKind,
   /* TODO dev deps, they need to be split into devBuildDeps probably */
-  /* solvedDevDeps: list(solvedDep), */
+  /* solvedDevDeps: list(SolvedDep.t), */
 
-  solvedDeps: list(solvedDep),
+  solvedDeps: list(SolvedDep.t),
   solvedBuildDeps: list((string, realVersion)),
   /* A mapping of name:version to the solved dependencies, and the solved build deps */
-  allBuildDeps: list((string, list((solvedDep, list(solvedDep))))),
+  allBuildDeps: list((string, list((SolvedDep.t, list(SolvedDep.t))))),
 };
 
 let empty = {

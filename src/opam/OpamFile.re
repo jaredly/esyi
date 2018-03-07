@@ -396,7 +396,7 @@ let getManifest = (opamOverrides, (opam, url, name, version)) => {
   }
 };
 
-let getArchive = ({source}) => source;
+let getSource = ({source}) => source;
 
 let process = ({deps, buildDeps, devDeps}) => {
   {Types.runtime: deps @ buildDeps, build: [], dev: devDeps, npm: []}
@@ -405,11 +405,11 @@ let process = ({deps, buildDeps, devDeps}) => {
 
 let commandListToJson = e => e |> List.map(items => `List(List.map(item => `String(item), items)));
 
-let toPackageJson = (opamOverrides, filename, name, version) => {
-  let manifest = getManifest(opamOverrides, (filename, "", withoutScope(name), switch version {
+let toPackageJson = (manifest, name, version) => {
+  /* let manifest = getManifest(opamOverrides, (filename, "", withoutScope(name), switch version {
   | `Opam(t) => t
   | _ => failwith("unexpected opam version")
-  }));
+  })); */
 
   (`Assoc([
     ("name", `String(name)),
