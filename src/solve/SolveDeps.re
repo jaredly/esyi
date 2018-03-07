@@ -233,22 +233,9 @@ let solveDeps = (~unique, ~strategy, ~previouslyInstalled=?, ~deep=true, cache, 
   };
 };
 
-let lockDown = (cache, (name, version, manifest, requestedDeps)) => {
-  Lockfile.SolvedDep.name: name,
-  version: version,
-  requestedDeps,
-  /* Optimization: this doesn't have to happen until later */
-  source: lockDownSource(Manifest.getSource(manifest, name, version)),
-  buildDeps: [],
-};
-
 let module Strategies = {
   let initial = "-notuptodate";
   let greatestOverlap = "-changed,-notuptodate";
-};
-
-let solveDepsForLockfile = (~unique=true, cache, deps) => {
-  solveDeps(~unique, ~strategy=Strategies.initial, ~deep=true, cache, deps) |> List.map(lockDown(cache))
 };
 
 
@@ -279,7 +266,7 @@ let crawlDeps = (requested, installed) => {
 /** TODO untested */
 let solveWithAsMuchOverlapAsPossible = (~cache, ~requested, ~current) => {
   let previouslyInstalled = Hashtbl.create(100);
-  current |> List.iter(({Lockfile.SolvedDep.name, version}) => Hashtbl.add(previouslyInstalled, (name, version), 1));
+  current |> List.iter(((name, version, _, _)) => Hashtbl.add(previouslyInstalled, (name, version), 1));
   let installed = solveDeps(
     ~unique=true,
     ~strategy=Strategies.greatestOverlap,
@@ -288,7 +275,7 @@ let solveWithAsMuchOverlapAsPossible = (~cache, ~requested, ~current) => {
     cache,
     requested
   );
-  crawlDeps(requested, installed) |> List.map(lockDown(cache))
+  crawlDeps(requested, installed)
 };
 
 let makeVersionMap = installed => {
