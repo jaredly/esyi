@@ -154,6 +154,14 @@ let module ParseName = {
   this file https://github.com/esy/esy-install/blob/master/src/resolvers/exotics/opam-resolver/opam-repository-override.js
   also this one https://github.com/esy/esy-install/blob/master/src/resolvers/exotics/opam-resolver/opam-repository.js */
 
+  let splitExtra = (patch) => {
+    switch (String.split_on_char('-', patch)) {
+    | [] => assert(false)
+    | [one] => (one, None)
+    | [one, ...rest] => (one, Some(String.concat("-", rest)))
+    }
+  };
+
   let parseDirectoryName = (name) => {
     open Shared.GenericVersion;
     switch (String.split_on_char('.', name)) {
@@ -177,7 +185,8 @@ let module ParseName = {
     }
     | [name, major, minor, patch] => {
       let (prefix, major) = prefix(major);
-      let version = OpamVersion.triple(int_of_string(major), int_of_string(minor), int_of_string(patch));
+      let (patch, extra) = splitExtra(patch);
+      let version = Shared.Types.opamFromNpmConcrete((int_of_string(major), int_of_string(minor), int_of_string(patch), extra));
       (name, switch prefix {
       | None => Exactly(version)
       | Some(">") => GreaterThan(version)
